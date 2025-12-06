@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using WhatToEat.API.Data;
+using WhatToEat.API.Services;
+using WhatToEat.API.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,12 @@ builder.Services.AddSwaggerGen();
 // Configure PostgreSQL database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Configure Yelp API settings
+builder.Services.Configure<YelpApiSettings>(builder.Configuration.GetSection("YelpApi"));
+
+// Register Yelp service with HttpClient
+builder.Services.AddHttpClient<IYelpService, YelpService>();
 
 // Configure CORS to allow frontend to access the API
 builder.Services.AddCors(options =>
