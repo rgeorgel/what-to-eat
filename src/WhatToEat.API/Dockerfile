@@ -21,9 +21,5 @@ EXPOSE 80
 EXPOSE 443
 
 COPY --from=publish /app/publish .
-COPY entrypoint.sh /app/
 
-# Make entrypoint executable
-RUN chmod +x /app/entrypoint.sh
-
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["dotnet", "WhatToEat.API.dll"]
