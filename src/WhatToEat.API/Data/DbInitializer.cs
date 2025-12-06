@@ -6,12 +6,18 @@ public static class DbInitializer
 {
     public static void Initialize(ApplicationDbContext context)
     {
-        context.Database.EnsureCreated();
-
         // Check if database is already seeded
-        if (context.Restaurants.Any())
+        // Use try-catch in case table doesn't exist yet
+        try
         {
-            return;
+            if (context.Restaurants.Any())
+            {
+                return;
+            }
+        }
+        catch
+        {
+            // Table doesn't exist, will be created by EnsureCreated in Program.cs
         }
 
         var restaurants = new Restaurant[]
