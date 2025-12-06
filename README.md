@@ -28,13 +28,49 @@ A modern web application that helps users find restaurants based on their food p
 
 ## Prerequisites
 
-Before running this application, ensure you have the following installed:
+### Option 1: Docker (Recommended - Easiest Setup)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) or Docker Engine
+- [Docker Compose](https://docs.docker.com/compose/install/) (included with Docker Desktop)
 
+### Option 2: Local Development
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [PostgreSQL 12+](https://www.postgresql.org/download/)
 - A modern web browser
 
-## Installation & Setup
+## Quick Start with Docker 🐳
+
+The fastest way to run the application is using Docker Compose, which will set up both the database and the web application:
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd what-to-eat
+
+# Build and start all services
+docker-compose up --build
+
+# Or run in detached mode (background)
+docker-compose up --build -d
+```
+
+The application will be available at **http://localhost:8080**
+
+To stop the application:
+```bash
+docker-compose down
+
+# To remove volumes (database data) as well
+docker-compose down -v
+```
+
+### Docker Services
+
+- **web**: .NET 8 application running on port 8080
+- **postgres**: PostgreSQL database running on port 5432
+- Automatic database migrations on startup
+- Sample restaurant data pre-loaded
+
+## Installation & Setup (Local Development)
 
 ### 1. Clone the Repository
 
