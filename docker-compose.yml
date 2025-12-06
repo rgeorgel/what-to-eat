@@ -32,6 +32,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:80
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=whattoeat;Username=postgres;Password=postgres
+      - YelpApi__ApiKey=${YELP_API_KEY:-YOUR_YELP_API_KEY_HERE}
     depends_on:
       postgres:
         condition: service_healthy
