@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What to Eat - Restaurant Finder</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🍽️ What to Eat</h1>
+            <p class="tagline">Find your next favorite meal</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Search Section -->
+        <section class="search-section">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="What do you want to eat? (e.g., pizza, sushi, burgers...)">
+                <button id="searchBtn" class="btn btn-primary">Search</button>
+                <button id="nearMeBtn" class="btn btn-secondary">
+                    <span class="icon">📍</span> Near Me
+                </button>
+            </div>
+
+            <div class="filters">
+                <label for="categoryFilter">Category:</label>
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                </select>
+
+                <label for="cuisineFilter">Cuisine:</label>
+                <select id="cuisineFilter">
+                    <option value="">All Cuisines</option>
+                </select>
+
+                <label for="radiusFilter">Radius (km):</label>
+                <select id="radiusFilter">
+                    <option value="1">1 km</option>
+                    <option value="2">2 km</option>
+                    <option value="5" selected>5 km</option>
+                    <option value="10">10 km</option>
+                    <option value="20">20 km</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- View Toggle -->
+        <section class="view-toggle">
+            <button id="listViewBtn" class="btn btn-toggle active">
+                <span class="icon">📋</span> List View
+            </button>
+            <button id="mapViewBtn" class="btn btn-toggle">
+                <span class="icon">🗺️</span> Map View
+            </button>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section">
+            <div id="resultsCount" class="results-count"></div>
+
+            <!-- List View -->
+            <div id="listView" class="list-view active">
+                <div id="restaurantList" class="restaurant-list">
+                    <!-- Restaurant cards will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Map View -->
+            <div id="mapView" class="map-view">
+                <div id="map"></div>
+            </div>
+        </section>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Loading restaurants...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="error-message hidden"></div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 What to Eat. Find your perfect meal!</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
