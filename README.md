@@ -108,7 +108,7 @@ Update the connection string in `src/WhatToEat.API/appsettings.json`:
 
 Replace `your_password` with your PostgreSQL password.
 
-### 4. Install Dependencies and Run Migrations
+### 4. Install Dependencies and Run
 
 Navigate to the API project directory:
 
@@ -116,29 +116,14 @@ Navigate to the API project directory:
 cd src/WhatToEat.API
 ```
 
-Restore NuGet packages:
+Restore NuGet packages and run:
 
 ```bash
 dotnet restore
-```
-
-Create and apply database migrations:
-
-```bash
-# Create initial migration
-dotnet ef migrations add InitialCreate
-
-# Apply migration to database
-dotnet ef database update
-```
-
-Note: The application will automatically seed sample restaurant data on first run.
-
-### 5. Run the Application
-
-```bash
 dotnet run
 ```
+
+Note: The application will automatically create the database schema and seed sample restaurant data on first run.
 
 The application will start and be available at:
 - **Application**: https://localhost:5001 or http://localhost:5000

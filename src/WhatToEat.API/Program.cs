@@ -33,7 +33,8 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        context.Database.Migrate();
+        // Use EnsureCreated for Docker deployments - creates schema without migrations
+        context.Database.EnsureCreated();
         DbInitializer.Initialize(context);
     }
     catch (Exception ex)

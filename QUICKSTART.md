@@ -48,8 +48,6 @@ docker-compose up -d postgres
 ```bash
 cd src/WhatToEat.API
 dotnet restore
-dotnet ef migrations add InitialCreate
-dotnet ef database update
 dotnet run
 ```
 
@@ -78,8 +76,6 @@ Edit `src/WhatToEat.API/appsettings.json`:
 ```bash
 cd src/WhatToEat.API
 dotnet restore
-dotnet ef migrations add InitialCreate
-dotnet ef database update
 dotnet run
 ```
 
