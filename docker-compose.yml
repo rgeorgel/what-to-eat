@@ -35,5 +35,17 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrations
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=whattoeat;Username=postgres;Password=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools
+
 volumes:
   postgres-data:

@@ -65,10 +65,29 @@ docker-compose down -v
 
 ### Docker Services
 
-- **web**: .NET 8 application running on port 8080
-- **postgres**: PostgreSQL database running on port 5432
+- **web**: .NET 8 application running on port 8089
+- **postgres**: PostgreSQL database running on port 8432 (mapped to 5432 internally)
+- **migrate**: Migration service for running EF Core commands (on-demand)
 - Automatic database migrations on startup
 - Sample restaurant data pre-loaded
+
+### Running Database Migrations
+
+The application automatically applies migrations on startup. For manual migration control, see [MIGRATIONS.md](MIGRATIONS.md) for detailed instructions on:
+
+- Running migrations manually using Docker
+- Creating new migrations
+- Rolling back migrations
+- Connecting to different databases
+
+Quick example:
+```bash
+# Apply all pending migrations
+docker-compose run --rm migrate database update
+
+# Create a new migration
+docker-compose run --rm migrate migrations add YourMigrationName
+```
 
 ## Installation & Setup (Local Development)
 
@@ -307,7 +326,22 @@ Logs are displayed in the console when running the application. For production, 
 
 ### Migration Issues
 
-If migrations fail, try:
+**For Docker deployments:**
+
+```bash
+# Check migration status
+docker-compose run --rm migrate migrations list
+
+# Apply migrations manually
+docker-compose run --rm migrate database update
+
+# Drop and recreate database (WARNING: deletes all data)
+docker-compose down -v
+docker-compose up -d postgres
+docker-compose run --rm migrate database update
+```
+
+**For local development:**
 
 ```bash
 # Remove existing migrations
@@ -317,6 +351,8 @@ dotnet ef database drop
 dotnet ef migrations add InitialCreate
 dotnet ef database update
 ```
+
+See [MIGRATIONS.md](MIGRATIONS.md) for comprehensive migration troubleshooting.
 
 ### Port Already in Use
 
