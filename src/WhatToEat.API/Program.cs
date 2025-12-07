@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using WhatToEat.API.Data;
 using WhatToEat.API.Services;
 using WhatToEat.API.Settings;
@@ -18,7 +19,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.Configure<YelpApiSettings>(builder.Configuration.GetSection("YelpApi"));
 
 // Register Yelp service with HttpClient
-builder.Services.AddHttpClient<IYelpService, YelpService>();
+builder.Services.AddHttpClient<IYelpService, YelpService>((serviceProvider, client) =>
+{
+    var yelpSettings = serviceProvider.GetRequiredService<IOptions<YelpApiSettings>>().Value;
+    client.BaseAddress = new Uri(yelpSettings.BaseUrl);
+    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {yelpSettings.ApiKey}");
+});
 
 // Configure CORS to allow frontend to access the API
 builder.Services.AddCors(options =>

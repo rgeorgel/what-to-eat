@@ -27,8 +27,7 @@ public class YelpService : IYelpService
         _settings = settings.Value;
         _logger = logger;
 
-        _httpClient.BaseAddress = new Uri(_settings.BaseUrl);
-        _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_settings.ApiKey}");
+        _logger.LogInformation("YelpService initialized with BaseUrl: {BaseUrl}", _httpClient.BaseAddress);
     }
 
     public async Task<List<Restaurant>> SearchRestaurantsAsync(string location, int limit = 50, int offset = 0)
@@ -44,7 +43,7 @@ public class YelpService : IYelpService
             };
 
             var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-            var response = await _httpClient.GetAsync($"/businesses/search?{queryString}");
+            var response = await _httpClient.GetAsync($"businesses/search?{queryString}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -91,7 +90,7 @@ public class YelpService : IYelpService
             };
 
             var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-            var response = await _httpClient.GetAsync($"/businesses/search?{queryString}");
+            var response = await _httpClient.GetAsync($"businesses/search?{queryString}");
 
             if (!response.IsSuccessStatusCode)
             {
