@@ -155,8 +155,15 @@ class FavoritesService {
         return await response.json();
     }
 
-    async getPublicLists() {
-        const response = await fetch(`${this.baseUrl}/public`, {
+    async getPublicLists(searchTerm = null, sortBy = null) {
+        const params = new URLSearchParams();
+        if (searchTerm) params.append('searchTerm', searchTerm);
+        if (sortBy) params.append('sortBy', sortBy);
+
+        const queryString = params.toString();
+        const url = queryString ? `${this.baseUrl}/public?${queryString}` : `${this.baseUrl}/public`;
+
+        const response = await fetch(url, {
             headers: {
                 ...authService.getAuthHeaders()
             }
