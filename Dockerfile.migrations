@@ -15,6 +15,10 @@ RUN dotnet tool install --global dotnet-ef --version 8.0.*
 # Add .NET tools to PATH
 ENV PATH="${PATH}:/root/.dotnet/tools"
 
-# Set the entrypoint to use dotnet ef
-ENTRYPOINT ["dotnet", "ef"]
+# Copy and setup entrypoint script
+COPY docker-entrypoint-migrations.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint-migrations.sh
+
+# Set the entrypoint to use our custom script
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint-migrations.sh"]
 CMD ["--help"]
