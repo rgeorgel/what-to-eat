@@ -154,6 +154,17 @@ class FavoritesService {
         if (!response.ok) throw new Error('Failed to fetch following lists');
         return await response.json();
     }
+
+    async getPublicLists() {
+        const response = await fetch(`${this.baseUrl}/public`, {
+            headers: {
+                ...authService.getAuthHeaders()
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch public lists');
+        return await response.json();
+    }
 }
 
 // Create singleton instance
