@@ -96,33 +96,9 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("Starting database initialization...");
         var context = services.GetRequiredService<ApplicationDbContext>();
 
-        logger.LogInformation("Checking if database can connect...");
-        var canConnect = context.Database.CanConnect();
-        logger.LogInformation($"Database CanConnect result: {canConnect}");
-
-        if (canConnect)
-        {
-            // Check if tables exist by trying to query
-            try
-            {
-                var count = context.Restaurants.Count();
-                logger.LogInformation($"Database already initialized with {count} restaurants.");
-            }
-            catch
-            {
-                // Tables don't exist, need to recreate database
-                logger.LogWarning("Database exists but tables are missing. Dropping and recreating database...");
-                context.Database.EnsureDeleted();
-                context.Database.EnsureCreated();
-                logger.LogInformation("Database recreated successfully.");
-            }
-        }
-        else
-        {
-            logger.LogInformation("Creating new database...");
-            context.Database.EnsureCreated();
-            logger.LogInformation("Database created successfully.");
-        }
+        logger.LogInformation("Applying database migrations...");
+        context.Database.Migrate();
+        logger.LogInformation("Database migrations applied successfully.");
 
         logger.LogInformation("Initializing seed data...");
         DbInitializer.Initialize(context);
