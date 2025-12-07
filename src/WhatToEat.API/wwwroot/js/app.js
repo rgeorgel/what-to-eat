@@ -21,14 +21,18 @@ async function initializeApp() {
     // Set up event listeners
     setupEventListeners();
 
+    // Handle initial hash on page load
+    handleHashChange();
+
     // Load filter options
     await loadFilterOptions();
 
-    // Load all restaurants initially
-    await loadRestaurants();
-
-    // Initialize map
-    initializeMap();
+    // Load all restaurants initially - only if not on a share page
+    if (!window.location.hash.startsWith('#/share/')) {
+        await loadRestaurants();
+        // Initialize map
+        initializeMap();
+    }
 }
 
 function setupEventListeners() {
@@ -108,6 +112,9 @@ function setupEventListeners() {
     // Add to favorites
     document.getElementById('addToListBtn').addEventListener('click', handleAddToList);
     document.getElementById('createListBtn').addEventListener('click', handleCreateListAndAdd);
+
+    // Hash change for routing
+    window.addEventListener('hashchange', handleHashChange);
 }
 
 async function loadFilterOptions() {
@@ -684,7 +691,16 @@ async function handleCreateListAndAdd() {
 // Navigation Functions
 // =============================================================================
 
-async function navigateTo(page) {
+function handleHashChange() {
+    const hash = window.location.hash;
+
+    if (hash.startsWith('#/share/')) {
+        const shareUrl = hash.substring(8); // Remove '#/share/' prefix
+        navigateTo('share', shareUrl);
+    }
+}
+
+async function navigateTo(page, param) {
     currentPage = page;
 
     // Update nav active state
@@ -720,6 +736,11 @@ async function navigateTo(page) {
         searchSection.style.display = 'none';
         viewToggle.style.display = 'none';
         await showFollowingPage();
+    } else if (page === 'share') {
+        // Don't highlight any nav link for shared pages
+        searchSection.style.display = 'none';
+        viewToggle.style.display = 'none';
+        await showSharedListPage(param);
     }
 }
 
@@ -962,4 +983,109 @@ function copyShareUrl(listId) {
     input.select();
     document.execCommand('copy');
     alert('Share link copied to clipboard!');
+}
+
+async function showSharedListPage(shareUrl) {
+    const resultsSection = document.querySelector('.results-section');
+    resultsSection.innerHTML = '<div class="page-loading">Loading shared list...</div>';
+
+    try {
+        // Fetch list metadata and items
+        const list = await favoritesService.getListByShareUrl(shareUrl);
+        const items = await favoritesService.getListItems(list.id);
+
+        let html = `
+            <div class="list-detail-page">
+                <div class="list-header">
+                    <button class="btn btn-small" onclick="navigateTo('home')">← Home</button>
+                    <h2>${list.name}</h2>
+                    <p>By ${list.userDisplayName} • ${list.itemCount} restaurants • ${list.followerCount} followers</p>
+        `;
+
+        // Show follow/unfollow button if authenticated and not the owner
+        if (authService.isAuthenticated()) {
+            const user = authService.getUser();
+            if (user.userId !== list.userId) {
+                if (list.isFollowing) {
+                    html += `<button class="btn btn-primary" onclick="unfollowSharedList(${list.id})">Unfollow</button>`;
+                } else {
+                    html += `<button class="btn btn-primary" onclick="followSharedList(${list.id})">Follow</button>`;
+                }
+            }
+        } else {
+            html += `<p><em>Login to follow this list</em></p>`;
+        }
+
+        html += '</div>';
+
+        if (items.length === 0) {
+            html += `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🍽️</div>
+                    <div class="empty-state-text">No restaurants in this list yet</div>
+                </div>
+            `;
+        } else {
+            html += '<div class="restaurant-list">';
+            items.forEach(item => {
+                const restaurant = item.restaurant;
+                const ratingStars = restaurant.rating ? '⭐'.repeat(Math.round(restaurant.rating)) : '';
+
+                html += `
+                    <div class="restaurant-card">
+                        <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+                             alt="${restaurant.name}"
+                             class="restaurant-image"
+                             onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                        <div class="restaurant-info">
+                            <h3 class="restaurant-name">${restaurant.name}</h3>
+                            <div>
+                                <span class="restaurant-category">${restaurant.category}</span>
+                                <span class="restaurant-cuisine">${restaurant.cuisineType}</span>
+                            </div>
+                            <p class="restaurant-address">📍 ${restaurant.address}</p>
+                            ${restaurant.rating ? `<div class="restaurant-rating">${ratingStars} ${restaurant.rating}/5</div>` : ''}
+                            ${restaurant.description ? `<p class="restaurant-description">${restaurant.description}</p>` : ''}
+                            ${item.notes ? `<p class="list-item-notes"><strong>Notes:</strong> ${item.notes}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        html += '</div>';
+        resultsSection.innerHTML = html;
+    } catch (error) {
+        resultsSection.innerHTML = `
+            <div class="error-message">
+                <h3>Failed to load shared list</h3>
+                <p>This list may not exist or is no longer public.</p>
+                <button class="btn btn-primary" onclick="navigateTo('home')">Go to Home</button>
+            </div>
+        `;
+        console.error('Error loading shared list:', error);
+    }
+}
+
+async function followSharedList(listId) {
+    try {
+        await favoritesService.followList(listId);
+        // Reload the current shared list
+        handleHashChange();
+    } catch (error) {
+        alert('Failed to follow list: ' + error.message);
+    }
+}
+
+async function unfollowSharedList(listId) {
+    if (!confirm('Unfollow this list?')) return;
+
+    try {
+        await favoritesService.unfollowList(listId);
+        // Reload the current shared list
+        handleHashChange();
+    } catch (error) {
+        alert('Failed to unfollow list: ' + error.message);
+    }
 }
