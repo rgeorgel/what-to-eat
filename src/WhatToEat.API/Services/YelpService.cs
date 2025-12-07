@@ -10,6 +10,8 @@ public interface IYelpService
 {
     Task<List<Restaurant>> SearchRestaurantsAsync(string location, int limit = 50, int offset = 0);
     Task<List<Restaurant>> SearchRestaurantsByCoordinatesAsync(double latitude, double longitude, int radius = 10000, int limit = 50, int offset = 0);
+    Task<List<Restaurant>> SearchRestaurantByNameAndLocationAsync(string name, string location, int limit = 10);
+    Task<List<Restaurant>> SearchRestaurantByNameAndCoordinatesAsync(string name, double latitude, double longitude, int radius = 1000, int limit = 10);
 }
 
 public class YelpService : IYelpService
@@ -113,6 +115,100 @@ public class YelpService : IYelpService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error searching restaurants from Yelp by coordinates");
+            return new List<Restaurant>();
+        }
+    }
+
+    public async Task<List<Restaurant>> SearchRestaurantByNameAndLocationAsync(string name, string location, int limit = 10)
+    {
+        try
+        {
+            var queryParams = new Dictionary<string, string>
+            {
+                { "term", name },
+                { "location", location },
+                { "categories", "restaurants" },
+                { "limit", Math.Min(limit, 50).ToString() }
+            };
+
+            var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
+            var response = await _httpClient.GetAsync($"businesses/search?{queryString}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Yelp API error: {StatusCode} - {Content}", response.StatusCode, errorContent);
+                return new List<Restaurant>();
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            var yelpResponse = JsonSerializer.Deserialize<YelpSearchResponse>(content);
+
+            if (yelpResponse?.Businesses == null)
+            {
+                _logger.LogWarning("No businesses found in Yelp response for name: {Name}, location: {Location}", name, location);
+                return new List<Restaurant>();
+            }
+
+            _logger.LogInformation("Found {Count} restaurants matching '{Name}' at '{Location}'",
+                yelpResponse.Businesses.Count, name, location);
+
+            return yelpResponse.Businesses.Select(MapToRestaurant).ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching restaurant by name and location");
+            return new List<Restaurant>();
+        }
+    }
+
+    public async Task<List<Restaurant>> SearchRestaurantByNameAndCoordinatesAsync(
+        string name,
+        double latitude,
+        double longitude,
+        int radius = 1000,
+        int limit = 10)
+    {
+        try
+        {
+            var queryParams = new Dictionary<string, string>
+            {
+                { "term", name },
+                { "latitude", latitude.ToString("F6") },
+                { "longitude", longitude.ToString("F6") },
+                { "categories", "restaurants" },
+                { "radius", Math.Min(radius, 40000).ToString() },
+                { "limit", Math.Min(limit, 50).ToString() }
+            };
+
+            var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
+            var response = await _httpClient.GetAsync($"businesses/search?{queryString}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Yelp API error: {StatusCode} - {Content}", response.StatusCode, errorContent);
+                return new List<Restaurant>();
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            var yelpResponse = JsonSerializer.Deserialize<YelpSearchResponse>(content);
+
+            if (yelpResponse?.Businesses == null)
+            {
+                _logger.LogWarning("No businesses found in Yelp response for name: {Name} at coordinates: ({Lat}, {Lng})",
+                    name, latitude, longitude);
+                return new List<Restaurant>();
+            }
+
+            _logger.LogInformation("Found {Count} restaurants matching '{Name}' at coordinates ({Lat}, {Lng})",
+                yelpResponse.Businesses.Count, name, latitude, longitude);
+
+            return yelpResponse.Businesses.Select(MapToRestaurant).ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching restaurant by name and coordinates");
             return new List<Restaurant>();
         }
     }
