@@ -96,9 +96,23 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("Starting database initialization...");
         var context = services.GetRequiredService<ApplicationDbContext>();
 
+        logger.LogInformation("Checking for pending migrations...");
+        var pendingMigrations = context.Database.GetPendingMigrations().ToList();
+        if (pendingMigrations.Any())
+        {
+            logger.LogInformation($"Found {pendingMigrations.Count} pending migration(s): {string.Join(", ", pendingMigrations)}");
+        }
+        else
+        {
+            logger.LogInformation("No pending migrations found.");
+        }
+
         logger.LogInformation("Applying database migrations...");
         context.Database.Migrate();
         logger.LogInformation("Database migrations applied successfully.");
+
+        var appliedMigrations = context.Database.GetAppliedMigrations().ToList();
+        logger.LogInformation($"Total applied migrations: {appliedMigrations.Count}");
 
         logger.LogInformation("Initializing seed data...");
         DbInitializer.Initialize(context);
@@ -107,6 +121,11 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         logger.LogError(ex, "An error occurred while initializing the database.");
+        logger.LogError($"Error details: {ex.Message}");
+        if (ex.InnerException != null)
+        {
+            logger.LogError($"Inner exception: {ex.InnerException.Message}");
+        }
         throw; // Re-throw to prevent app from starting with broken database
     }
 }
