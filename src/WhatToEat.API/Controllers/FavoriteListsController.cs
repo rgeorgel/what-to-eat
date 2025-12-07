@@ -55,10 +55,10 @@ public class FavoriteListsController : ControllerBase
 
     // GET: api/favoritelists/{id} - Get list by ID
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public async Task<ActionResult<FavoriteListDto>> GetList(int id)
     {
         var userId = _userManager.GetUserId(User);
-        if (userId == null) return Unauthorized();
 
         var list = await _context.FavoriteLists
             .Include(fl => fl.User)
@@ -69,12 +69,18 @@ public class FavoriteListsController : ControllerBase
         if (list == null) return NotFound();
 
         // Only allow access if user owns the list or it's public
-        if (list.UserId != userId && !list.IsPublic)
+        // Anonymous users can only view public lists
+        if (userId == null && !list.IsPublic)
+        {
+            return Unauthorized();
+        }
+
+        if (userId != null && list.UserId != userId && !list.IsPublic)
         {
             return Forbid();
         }
 
-        var isFollowing = await _context.ListFollowers
+        var isFollowing = userId != null && await _context.ListFollowers
             .AnyAsync(lf => lf.FavoriteListId == id && lf.UserId == userId);
 
         return Ok(new FavoriteListDto
@@ -223,16 +229,22 @@ public class FavoriteListsController : ControllerBase
 
     // GET: api/favoritelists/{id}/items - Get items in a list
     [HttpGet("{id}/items")]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<ListItemDto>>> GetListItems(int id)
     {
         var userId = _userManager.GetUserId(User);
-        if (userId == null) return Unauthorized();
 
         var list = await _context.FavoriteLists.FindAsync(id);
         if (list == null) return NotFound();
 
         // Only allow access if user owns the list or it's public
-        if (list.UserId != userId && !list.IsPublic)
+        // Anonymous users can only view public lists
+        if (userId == null && !list.IsPublic)
+        {
+            return Unauthorized();
+        }
+
+        if (userId != null && list.UserId != userId && !list.IsPublic)
         {
             return Forbid();
         }
@@ -410,26 +422,45 @@ public class FavoriteListsController : ControllerBase
 
     // GET: api/favoritelists/public - Get all public lists for discovery
     [HttpGet("public")]
-    public async Task<ActionResult<IEnumerable<FavoriteListDto>>> GetPublicLists()
+    [AllowAnonymous]
+    public async Task<ActionResult<IEnumerable<FavoriteListDto>>> GetPublicLists(
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] string? sortBy = null)
     {
         var userId = _userManager.GetUserId(User);
-        if (userId == null) return Unauthorized();
 
         // Get all public lists with their relationships
-        var publicLists = await _context.FavoriteLists
+        var query = _context.FavoriteLists
             .Include(fl => fl.User)
             .Include(fl => fl.ListItems)
             .Include(fl => fl.Followers)
-            .Where(fl => fl.IsPublic)
-            .OrderByDescending(fl => fl.Followers.Count)
-            .ThenByDescending(fl => fl.UpdatedAt)
-            .ToListAsync();
+            .Where(fl => fl.IsPublic);
 
-        // Get list of IDs that the current user is following
-        var followingListIds = await _context.ListFollowers
-            .Where(lf => lf.UserId == userId)
-            .Select(lf => lf.FavoriteListId)
-            .ToListAsync();
+        // Apply filtering by list name
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            query = query.Where(fl => fl.Name.Contains(searchTerm));
+        }
+
+        // Apply sorting
+        query = sortBy?.ToLower() switch
+        {
+            "oldest" => query.OrderBy(fl => fl.CreatedAt),
+            "followers" => query.OrderByDescending(fl => fl.Followers.Count).ThenByDescending(fl => fl.UpdatedAt),
+            _ => query.OrderByDescending(fl => fl.Followers.Count).ThenByDescending(fl => fl.UpdatedAt) // Default sorting
+        };
+
+        var publicLists = await query.ToListAsync();
+
+        // Get list of IDs that the current user is following (if authenticated)
+        var followingListIds = new List<int>();
+        if (userId != null)
+        {
+            followingListIds = await _context.ListFollowers
+                .Where(lf => lf.UserId == userId)
+                .Select(lf => lf.FavoriteListId)
+                .ToListAsync();
+        }
 
         var result = publicLists.Select(fl => new FavoriteListDto
         {

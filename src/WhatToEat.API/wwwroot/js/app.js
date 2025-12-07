@@ -518,7 +518,8 @@ function showUnauthenticatedUI() {
     document.getElementById('userMenu').classList.add('hidden');
     document.getElementById('myListsLink').classList.add('hidden');
     document.getElementById('followingLink').classList.add('hidden');
-    document.getElementById('discoverLink').classList.add('hidden');
+    // Keep discover link visible for non-logged users
+    document.getElementById('discoverLink').classList.remove('hidden');
 }
 
 async function handleLogin(e) {
@@ -867,7 +868,11 @@ async function showDiscoverPage() {
     resultsSection.innerHTML = '<div class="page-loading">Loading public lists...</div>';
 
     try {
-        const lists = await favoritesService.getPublicLists();
+        // Get filter and sort values if they exist
+        const searchTerm = document.getElementById('discoverSearchInput')?.value || '';
+        const sortBy = document.getElementById('discoverSortSelect')?.value || '';
+
+        const lists = await favoritesService.getPublicLists(searchTerm || null, sortBy || null);
 
         let html = `
             <div class="lists-page">
@@ -875,14 +880,32 @@ async function showDiscoverPage() {
                     <h2>Discover Public Lists</h2>
                     <p class="subheader">Browse and follow lists shared by other users</p>
                 </div>
+                <div class="lists-filters">
+                    <div class="filter-group">
+                        <input type="text"
+                               id="discoverSearchInput"
+                               placeholder="Filter by list name..."
+                               value="${searchTerm}"
+                               class="filter-input">
+                    </div>
+                    <div class="filter-group">
+                        <select id="discoverSortSelect" class="filter-select">
+                            <option value="">Sort by: Followers (default)</option>
+                            <option value="followers" ${sortBy === 'followers' ? 'selected' : ''}>Sort by: Followers</option>
+                            <option value="oldest" ${sortBy === 'oldest' ? 'selected' : ''}>Sort by: Oldest</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="applyDiscoverFilters()">Apply</button>
+                    <button class="btn btn-secondary" onclick="clearDiscoverFilters()">Clear</button>
+                </div>
         `;
 
         if (lists.length === 0) {
             html += `
                 <div class="empty-state">
                     <div class="empty-state-icon">🌐</div>
-                    <div class="empty-state-text">No public lists available</div>
-                    <div class="empty-state-subtext">Be the first to create a public list!</div>
+                    <div class="empty-state-text">No public lists found</div>
+                    <div class="empty-state-subtext">Try adjusting your filters or be the first to create a public list!</div>
                 </div>
             `;
         } else {
@@ -891,11 +914,16 @@ async function showDiscoverPage() {
                 const currentUser = authService.getUser();
                 const isOwnList = currentUser && list.userId === currentUser.userId;
 
-                const followButton = isOwnList
-                    ? '<span class="badge">Your List</span>'
-                    : list.isFollowing
-                        ? `<button class="btn btn-small btn-secondary" onclick="unfollowListFromDiscover(${list.id})">Unfollow</button>`
-                        : `<button class="btn btn-small btn-primary" onclick="followListFromDiscover(${list.id})">Follow</button>`;
+                let followButton = '';
+                if (authService.isAuthenticated()) {
+                    followButton = isOwnList
+                        ? '<span class="badge">Your List</span>'
+                        : list.isFollowing
+                            ? `<button class="btn btn-small btn-secondary" onclick="unfollowListFromDiscover(${list.id})">Unfollow</button>`
+                            : `<button class="btn btn-small btn-primary" onclick="followListFromDiscover(${list.id})">Follow</button>`;
+                } else {
+                    followButton = '<span class="badge">Login to follow</span>';
+                }
 
                 html += `
                     <div class="list-card">
@@ -938,8 +966,21 @@ async function viewList(listId) {
                     <button class="btn btn-small" onclick="navigateTo('${backPage}')">← Back</button>
                     <h2>${list.name}</h2>
                     <p>By ${list.userDisplayName} • ${list.itemCount} restaurants • ${list.followerCount} followers</p>
-                </div>
         `;
+
+        // Show follow/unfollow button if viewing from discover page and authenticated
+        if (currentPage === 'discover' && authService.isAuthenticated()) {
+            const user = authService.getUser();
+            if (user.userId !== list.userId) {
+                if (list.isFollowing) {
+                    html += `<button class="btn btn-primary" onclick="unfollowListFromDiscover(${list.id})">Unfollow</button>`;
+                } else {
+                    html += `<button class="btn btn-primary" onclick="followListFromDiscover(${list.id})">Follow</button>`;
+                }
+            }
+        }
+
+        html += '</div>';
 
         if (items.length === 0) {
             html += `
@@ -988,7 +1029,18 @@ async function viewList(listId) {
         html += '</div>';
         resultsSection.innerHTML = html;
     } catch (error) {
-        resultsSection.innerHTML = '<div class="error-message">Failed to load list</div>';
+        // If the error is due to authentication and we're viewing from discover, show a more helpful message
+        if (!authService.isAuthenticated() && currentPage === 'discover') {
+            resultsSection.innerHTML = `
+                <div class="error-message">
+                    <h3>Please log in to view this list</h3>
+                    <button class="btn btn-primary" onclick="showModal('loginModal')">Log In</button>
+                    <button class="btn btn-secondary" onclick="navigateTo('discover')">← Back to Discover</button>
+                </div>
+            `;
+        } else {
+            resultsSection.innerHTML = '<div class="error-message">Failed to load list</div>';
+        }
         console.error('Error loading list:', error);
     }
 }
@@ -1050,6 +1102,11 @@ async function unfollowList(listId) {
 }
 
 async function followListFromDiscover(listId) {
+    if (!authService.isAuthenticated()) {
+        showModal('loginModal');
+        return;
+    }
+
     try {
         await favoritesService.followList(listId);
         await showDiscoverPage();
@@ -1071,6 +1128,21 @@ async function unfollowListFromDiscover(listId) {
 
 async function viewListFromDiscover(listId) {
     await viewList(listId);
+}
+
+async function applyDiscoverFilters() {
+    await showDiscoverPage();
+}
+
+async function clearDiscoverFilters() {
+    // Clear the filter inputs by reloading the page without filters
+    const discoverSearchInput = document.getElementById('discoverSearchInput');
+    const discoverSortSelect = document.getElementById('discoverSortSelect');
+
+    if (discoverSearchInput) discoverSearchInput.value = '';
+    if (discoverSortSelect) discoverSortSelect.value = '';
+
+    await showDiscoverPage();
 }
 
 function copyShareUrl(listId) {
