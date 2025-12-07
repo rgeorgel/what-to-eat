@@ -75,6 +75,10 @@ function setupEventListeners() {
         e.preventDefault();
         navigateTo('following');
     });
+    document.getElementById('discoverLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo('discover');
+    });
 
     // Modal switches
     document.getElementById('switchToSignup').addEventListener('click', (e) => {
@@ -501,6 +505,7 @@ function showAuthenticatedUI() {
     document.getElementById('userMenu').classList.remove('hidden');
     document.getElementById('myListsLink').classList.remove('hidden');
     document.getElementById('followingLink').classList.remove('hidden');
+    document.getElementById('discoverLink').classList.remove('hidden');
 
     const user = authService.getUser();
     if (user) {
@@ -513,6 +518,7 @@ function showUnauthenticatedUI() {
     document.getElementById('userMenu').classList.add('hidden');
     document.getElementById('myListsLink').classList.add('hidden');
     document.getElementById('followingLink').classList.add('hidden');
+    document.getElementById('discoverLink').classList.add('hidden');
 }
 
 async function handleLogin(e) {
@@ -736,6 +742,11 @@ async function navigateTo(page, param) {
         searchSection.style.display = 'none';
         viewToggle.style.display = 'none';
         await showFollowingPage();
+    } else if (page === 'discover') {
+        document.getElementById('discoverLink').classList.add('active');
+        searchSection.style.display = 'none';
+        viewToggle.style.display = 'none';
+        await showDiscoverPage();
     } else if (page === 'share') {
         // Don't highlight any nav link for shared pages
         searchSection.style.display = 'none';
@@ -851,6 +862,64 @@ async function showFollowingPage() {
     }
 }
 
+async function showDiscoverPage() {
+    const resultsSection = document.querySelector('.results-section');
+    resultsSection.innerHTML = '<div class="page-loading">Loading public lists...</div>';
+
+    try {
+        const lists = await favoritesService.getPublicLists();
+
+        let html = `
+            <div class="lists-page">
+                <div class="lists-header">
+                    <h2>Discover Public Lists</h2>
+                    <p class="subheader">Browse and follow lists shared by other users</p>
+                </div>
+        `;
+
+        if (lists.length === 0) {
+            html += `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🌐</div>
+                    <div class="empty-state-text">No public lists available</div>
+                    <div class="empty-state-subtext">Be the first to create a public list!</div>
+                </div>
+            `;
+        } else {
+            html += '<div class="lists-grid">';
+            lists.forEach(list => {
+                const currentUser = authService.getUser();
+                const isOwnList = currentUser && list.userId === currentUser.userId;
+
+                const followButton = isOwnList
+                    ? '<span class="badge">Your List</span>'
+                    : list.isFollowing
+                        ? `<button class="btn btn-small btn-secondary" onclick="unfollowListFromDiscover(${list.id})">Unfollow</button>`
+                        : `<button class="btn btn-small btn-primary" onclick="followListFromDiscover(${list.id})">Follow</button>`;
+
+                html += `
+                    <div class="list-card">
+                        <h3>${list.name}</h3>
+                        <p>By ${list.userDisplayName}</p>
+                        <p>${list.itemCount} restaurant${list.itemCount !== 1 ? 's' : ''} • ${list.followerCount} follower${list.followerCount !== 1 ? 's' : ''}</p>
+                        <div class="list-actions">
+                            <button class="btn btn-small" onclick="viewListFromDiscover(${list.id})">View</button>
+                            ${followButton}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        html += '</div>';
+        resultsSection.innerHTML = html;
+    } catch (error) {
+        resultsSection.innerHTML = '<div class="error-message">Failed to load public lists</div>';
+        console.error('Error loading public lists:', error);
+    }
+}
+
 async function viewList(listId) {
     const resultsSection = document.querySelector('.results-section');
     resultsSection.innerHTML = '<div class="page-loading">Loading list...</div>';
@@ -861,10 +930,12 @@ async function viewList(listId) {
             favoritesService.getListItems(listId)
         ]);
 
+        const backPage = currentPage === 'following' ? 'following' : currentPage === 'discover' ? 'discover' : 'myLists';
+
         let html = `
             <div class="list-detail-page">
                 <div class="list-header">
-                    <button class="btn btn-small" onclick="navigateTo('${currentPage === 'following' ? 'following' : 'myLists'}')">← Back</button>
+                    <button class="btn btn-small" onclick="navigateTo('${backPage}')">← Back</button>
                     <h2>${list.name}</h2>
                     <p>By ${list.userDisplayName} • ${list.itemCount} restaurants • ${list.followerCount} followers</p>
                 </div>
@@ -976,6 +1047,30 @@ async function unfollowList(listId) {
     } catch (error) {
         alert('Failed to unfollow list: ' + error.message);
     }
+}
+
+async function followListFromDiscover(listId) {
+    try {
+        await favoritesService.followList(listId);
+        await showDiscoverPage();
+    } catch (error) {
+        alert('Failed to follow list: ' + error.message);
+    }
+}
+
+async function unfollowListFromDiscover(listId) {
+    if (!confirm('Unfollow this list?')) return;
+
+    try {
+        await favoritesService.unfollowList(listId);
+        await showDiscoverPage();
+    } catch (error) {
+        alert('Failed to unfollow list: ' + error.message);
+    }
+}
+
+async function viewListFromDiscover(listId) {
+    await viewList(listId);
 }
 
 function copyShareUrl(listId) {

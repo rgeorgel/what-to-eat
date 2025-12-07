@@ -408,6 +408,47 @@ public class FavoriteListsController : ControllerBase
         return Ok(lists);
     }
 
+    // GET: api/favoritelists/public - Get all public lists for discovery
+    [HttpGet("public")]
+    public async Task<ActionResult<IEnumerable<FavoriteListDto>>> GetPublicLists()
+    {
+        var userId = _userManager.GetUserId(User);
+        if (userId == null) return Unauthorized();
+
+        // Get all public lists with their relationships
+        var publicLists = await _context.FavoriteLists
+            .Include(fl => fl.User)
+            .Include(fl => fl.ListItems)
+            .Include(fl => fl.Followers)
+            .Where(fl => fl.IsPublic)
+            .OrderByDescending(fl => fl.Followers.Count)
+            .ThenByDescending(fl => fl.UpdatedAt)
+            .ToListAsync();
+
+        // Get list of IDs that the current user is following
+        var followingListIds = await _context.ListFollowers
+            .Where(lf => lf.UserId == userId)
+            .Select(lf => lf.FavoriteListId)
+            .ToListAsync();
+
+        var result = publicLists.Select(fl => new FavoriteListDto
+        {
+            Id = fl.Id,
+            Name = fl.Name,
+            UserId = fl.UserId,
+            UserDisplayName = fl.User.DisplayName,
+            IsPublic = fl.IsPublic,
+            ShareUrl = fl.ShareUrl,
+            ItemCount = fl.ListItems.Count,
+            FollowerCount = fl.Followers.Count,
+            IsFollowing = followingListIds.Contains(fl.Id),
+            CreatedAt = fl.CreatedAt,
+            UpdatedAt = fl.UpdatedAt
+        }).ToList();
+
+        return Ok(result);
+    }
+
     private string GenerateShareUrl()
     {
         return Guid.NewGuid().ToString("N")[..12]; // 12 character unique ID
