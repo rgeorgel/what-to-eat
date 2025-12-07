@@ -1,0 +1,20 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+
+WORKDIR /app
+
+# Copy project file and restore dependencies
+COPY src/WhatToEat.API/WhatToEat.API.csproj ./
+RUN dotnet restore
+
+# Copy the entire project
+COPY src/WhatToEat.API/ ./
+
+# Install EF Core tools globally
+RUN dotnet tool install --global dotnet-ef --version 8.0.*
+
+# Add .NET tools to PATH
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
+# Set the entrypoint to use dotnet ef
+ENTRYPOINT ["dotnet", "ef"]
+CMD ["--help"]

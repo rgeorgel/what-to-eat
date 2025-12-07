@@ -1,6 +1,11 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using WhatToEat.API.Data;
+using WhatToEat.API.Models;
 using WhatToEat.API.Services;
 using WhatToEat.API.Settings;
 
@@ -14,6 +19,46 @@ builder.Services.AddSwaggerGen();
 // Configure PostgreSQL database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Configure Identity
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 6;
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
+
+// Configure JWT
+var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
+    ?? throw new InvalidOperationException("JWT settings not found");
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
+    };
+});
+
+builder.Services.AddAuthorization();
 
 // Configure Yelp API settings
 builder.Services.Configure<YelpApiSettings>(builder.Configuration.GetSection("YelpApi"));
@@ -51,33 +96,23 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("Starting database initialization...");
         var context = services.GetRequiredService<ApplicationDbContext>();
 
-        logger.LogInformation("Checking if database can connect...");
-        var canConnect = context.Database.CanConnect();
-        logger.LogInformation($"Database CanConnect result: {canConnect}");
-
-        if (canConnect)
+        logger.LogInformation("Checking for pending migrations...");
+        var pendingMigrations = context.Database.GetPendingMigrations().ToList();
+        if (pendingMigrations.Any())
         {
-            // Check if tables exist by trying to query
-            try
-            {
-                var count = context.Restaurants.Count();
-                logger.LogInformation($"Database already initialized with {count} restaurants.");
-            }
-            catch
-            {
-                // Tables don't exist, need to recreate database
-                logger.LogWarning("Database exists but tables are missing. Dropping and recreating database...");
-                context.Database.EnsureDeleted();
-                context.Database.EnsureCreated();
-                logger.LogInformation("Database recreated successfully.");
-            }
+            logger.LogInformation($"Found {pendingMigrations.Count} pending migration(s): {string.Join(", ", pendingMigrations)}");
         }
         else
         {
-            logger.LogInformation("Creating new database...");
-            context.Database.EnsureCreated();
-            logger.LogInformation("Database created successfully.");
+            logger.LogInformation("No pending migrations found.");
         }
+
+        logger.LogInformation("Applying database migrations...");
+        context.Database.Migrate();
+        logger.LogInformation("Database migrations applied successfully.");
+
+        var appliedMigrations = context.Database.GetAppliedMigrations().ToList();
+        logger.LogInformation($"Total applied migrations: {appliedMigrations.Count}");
 
         logger.LogInformation("Initializing seed data...");
         DbInitializer.Initialize(context);
@@ -86,6 +121,11 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         logger.LogError(ex, "An error occurred while initializing the database.");
+        logger.LogError($"Error details: {ex.Message}");
+        if (ex.InnerException != null)
+        {
+            logger.LogError($"Inner exception: {ex.InnerException.Message}");
+        }
         throw; // Re-throw to prevent app from starting with broken database
     }
 }
@@ -103,6 +143,7 @@ app.UseCors("AllowAll");
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
