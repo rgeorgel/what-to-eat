@@ -8,10 +8,10 @@ namespace WhatToEat.API.Services;
 
 public interface IYelpService
 {
-    Task<List<Restaurant>> SearchRestaurantsAsync(string location, int limit = 50, int offset = 0);
-    Task<List<Restaurant>> SearchRestaurantsByCoordinatesAsync(double latitude, double longitude, int radius = 10000, int limit = 50, int offset = 0);
-    Task<List<Restaurant>> SearchRestaurantByNameAndLocationAsync(string name, string location, int limit = 10);
-    Task<List<Restaurant>> SearchRestaurantByNameAndCoordinatesAsync(string name, double latitude, double longitude, int radius = 1000, int limit = 10);
+    Task<List<Restaurant>> SearchRestaurantsAsync(string location, int limit = 50, int offset = 0, string category = "restaurants");
+    Task<List<Restaurant>> SearchRestaurantsByCoordinatesAsync(double latitude, double longitude, int radius = 10000, int limit = 50, int offset = 0, string category = "restaurants");
+    Task<List<Restaurant>> SearchRestaurantByNameAndLocationAsync(string name, string location, int limit = 10, string category = "restaurants");
+    Task<List<Restaurant>> SearchRestaurantByNameAndCoordinatesAsync(string name, double latitude, double longitude, int radius = 1000, int limit = 10, string category = "restaurants");
 }
 
 public class YelpService : IYelpService
@@ -32,14 +32,14 @@ public class YelpService : IYelpService
         _logger.LogInformation("YelpService initialized with BaseUrl: {BaseUrl}", _httpClient.BaseAddress);
     }
 
-    public async Task<List<Restaurant>> SearchRestaurantsAsync(string location, int limit = 50, int offset = 0)
+    public async Task<List<Restaurant>> SearchRestaurantsAsync(string location, int limit = 50, int offset = 0, string category = "restaurants")
     {
         try
         {
             var queryParams = new Dictionary<string, string>
             {
                 { "location", location },
-                { "categories", "restaurants" },
+                { "categories", category },
                 { "limit", Math.Min(limit, 50).ToString() },
                 { "offset", offset.ToString() }
             };
@@ -77,7 +77,8 @@ public class YelpService : IYelpService
         double longitude,
         int radius = 10000,
         int limit = 50,
-        int offset = 0)
+        int offset = 0,
+        string category = "restaurants")
     {
         try
         {
@@ -85,7 +86,7 @@ public class YelpService : IYelpService
             {
                 { "latitude", latitude.ToString("F6") },
                 { "longitude", longitude.ToString("F6") },
-                { "categories", "restaurants" },
+                { "categories", category },
                 { "radius", Math.Min(radius, 40000).ToString() },
                 { "limit", Math.Min(limit, 50).ToString() },
                 { "offset", offset.ToString() }
@@ -119,7 +120,7 @@ public class YelpService : IYelpService
         }
     }
 
-    public async Task<List<Restaurant>> SearchRestaurantByNameAndLocationAsync(string name, string location, int limit = 10)
+    public async Task<List<Restaurant>> SearchRestaurantByNameAndLocationAsync(string name, string location, int limit = 10, string category = "restaurants")
     {
         try
         {
@@ -127,7 +128,7 @@ public class YelpService : IYelpService
             {
                 { "term", name },
                 { "location", location },
-                { "categories", "restaurants" },
+                { "categories", category },
                 { "limit", Math.Min(limit, 50).ToString() }
             };
 
@@ -167,7 +168,8 @@ public class YelpService : IYelpService
         double latitude,
         double longitude,
         int radius = 1000,
-        int limit = 10)
+        int limit = 10,
+        string category = "restaurants")
     {
         try
         {
@@ -176,7 +178,7 @@ public class YelpService : IYelpService
                 { "term", name },
                 { "latitude", latitude.ToString("F6") },
                 { "longitude", longitude.ToString("F6") },
-                { "categories", "restaurants" },
+                { "categories", category },
                 { "radius", Math.Min(radius, 40000).ToString() },
                 { "limit", Math.Min(limit, 50).ToString() }
             };

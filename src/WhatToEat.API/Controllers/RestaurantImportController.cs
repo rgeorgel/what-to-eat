@@ -31,7 +31,8 @@ public class RestaurantImportController : ControllerBase
     public async Task<ActionResult<ImportResult>> ImportFromLocation(
         [FromQuery] string location,
         [FromQuery] int limit = 50,
-        [FromQuery] bool skipDuplicates = true)
+        [FromQuery] bool skipDuplicates = true,
+        [FromQuery] string category = "restaurants")
     {
         try
         {
@@ -43,7 +44,7 @@ public class RestaurantImportController : ControllerBase
             while (totalFetched < limit)
             {
                 var batchSize = Math.Min(50, limit - totalFetched);
-                var batch = await _yelpService.SearchRestaurantsAsync(location, batchSize, offset);
+                var batch = await _yelpService.SearchRestaurantsAsync(location, batchSize, offset, category);
 
                 if (batch.Count == 0)
                     break;
@@ -80,7 +81,8 @@ public class RestaurantImportController : ControllerBase
         [FromQuery] double longitude,
         [FromQuery] int radius = 10000,
         [FromQuery] int limit = 50,
-        [FromQuery] bool skipDuplicates = true)
+        [FromQuery] bool skipDuplicates = true,
+        [FromQuery] string category = "restaurants")
     {
         try
         {
@@ -93,7 +95,7 @@ public class RestaurantImportController : ControllerBase
             {
                 var batchSize = Math.Min(50, limit - totalFetched);
                 var batch = await _yelpService.SearchRestaurantsByCoordinatesAsync(
-                    latitude, longitude, radius, batchSize, offset);
+                    latitude, longitude, radius, batchSize, offset, category);
 
                 if (batch.Count == 0)
                     break;
@@ -130,12 +132,13 @@ public class RestaurantImportController : ControllerBase
     public async Task<ActionResult<ImportResult>> ImportFromToronto(
         [FromQuery] int radius = 10000,
         [FromQuery] int limit = 50,
-        [FromQuery] bool skipDuplicates = true)
+        [FromQuery] bool skipDuplicates = true,
+        [FromQuery] string category = "restaurants")
     {
         const double torontoLat = 43.6532;
         const double torontoLng = -79.3832;
 
-        return await ImportFromCoordinates(torontoLat, torontoLng, radius, limit, skipDuplicates);
+        return await ImportFromCoordinates(torontoLat, torontoLng, radius, limit, skipDuplicates, category);
     }
 
     /// <summary>
@@ -147,7 +150,8 @@ public class RestaurantImportController : ControllerBase
         [FromQuery] string name,
         [FromQuery] string location,
         [FromQuery] int limit = 10,
-        [FromQuery] bool skipDuplicates = true)
+        [FromQuery] bool skipDuplicates = true,
+        [FromQuery] string category = "restaurants")
     {
         try
         {
@@ -171,7 +175,7 @@ public class RestaurantImportController : ControllerBase
 
             _logger.LogInformation("Searching for restaurant: {Name} at location: {Location}", name, location);
 
-            var restaurants = await _yelpService.SearchRestaurantByNameAndLocationAsync(name, location, limit);
+            var restaurants = await _yelpService.SearchRestaurantByNameAndLocationAsync(name, location, limit, category);
 
             if (restaurants.Count == 0)
             {
@@ -211,7 +215,8 @@ public class RestaurantImportController : ControllerBase
         [FromQuery] double longitude,
         [FromQuery] int radius = 1000,
         [FromQuery] int limit = 10,
-        [FromQuery] bool skipDuplicates = true)
+        [FromQuery] bool skipDuplicates = true,
+        [FromQuery] string category = "restaurants")
     {
         try
         {
@@ -228,7 +233,7 @@ public class RestaurantImportController : ControllerBase
                 name, latitude, longitude);
 
             var restaurants = await _yelpService.SearchRestaurantByNameAndCoordinatesAsync(
-                name, latitude, longitude, radius, limit);
+                name, latitude, longitude, radius, limit, category);
 
             if (restaurants.Count == 0)
             {
