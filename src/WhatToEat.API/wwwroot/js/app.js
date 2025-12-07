@@ -6,6 +6,8 @@ let map = null;
 let markers = [];
 let userLocation = null;
 let allRestaurants = [];
+let currentPage = 'home';
+let selectedRestaurantForFavorite = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,6 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initializeApp() {
+    // Initialize authentication UI
+    initializeAuth();
+
     // Set up event listeners
     setupEventListeners();
 
@@ -47,6 +52,62 @@ function setupEventListeners() {
     // Filters
     document.getElementById('categoryFilter').addEventListener('change', handleSearch);
     document.getElementById('cuisineFilter').addEventListener('change', handleSearch);
+
+    // Auth buttons
+    document.getElementById('loginBtn').addEventListener('click', () => showModal('loginModal'));
+    document.getElementById('signupBtn').addEventListener('click', () => showModal('signupModal'));
+    document.getElementById('logoutBtn').addEventListener('click', () => authService.logout());
+
+    // Navigation
+    document.getElementById('homeLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo('home');
+    });
+    document.getElementById('myListsLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo('myLists');
+    });
+    document.getElementById('followingLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo('following');
+    });
+
+    // Modal switches
+    document.getElementById('switchToSignup').addEventListener('click', (e) => {
+        e.preventDefault();
+        hideModal('loginModal');
+        showModal('signupModal');
+    });
+    document.getElementById('switchToLogin').addEventListener('click', (e) => {
+        e.preventDefault();
+        hideModal('signupModal');
+        showModal('loginModal');
+    });
+
+    // Modal close buttons
+    document.querySelectorAll('.close').forEach(closeBtn => {
+        closeBtn.addEventListener('click', () => {
+            const modalId = closeBtn.getAttribute('data-modal');
+            hideModal(modalId);
+        });
+    });
+
+    // Click outside modal to close
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            e.target.classList.add('hidden');
+        }
+    });
+
+    // Login form
+    document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+    // Signup form
+    document.getElementById('signupForm').addEventListener('submit', handleSignup);
+
+    // Add to favorites
+    document.getElementById('addToListBtn').addEventListener('click', handleAddToList);
+    document.getElementById('createListBtn').addEventListener('click', handleCreateListAndAdd);
 }
 
 async function loadFilterOptions() {
@@ -243,6 +304,10 @@ function createRestaurantCard(restaurant) {
         ? `<span class="restaurant-distance">📍 ${restaurant.distance.toFixed(2)} km away</span>`
         : '';
 
+    const favoriteButtonHtml = authService.isAuthenticated()
+        ? `<button class="btn btn-favorite" data-restaurant-id="${restaurant.id}">❤️ Add to Favorites</button>`
+        : '';
+
     card.innerHTML = `
         <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
              alt="${restaurant.name}"
@@ -259,8 +324,18 @@ function createRestaurantCard(restaurant) {
             ${restaurant.description ? `<p class="restaurant-description">${restaurant.description}</p>` : ''}
             ${restaurant.phone ? `<p class="restaurant-phone">📞 ${restaurant.phone}</p>` : ''}
             ${distanceHtml}
+            ${favoriteButtonHtml}
         </div>
     `;
+
+    // Add event listener for favorite button
+    if (authService.isAuthenticated()) {
+        const favoriteBtn = card.querySelector('.btn-favorite');
+        favoriteBtn.addEventListener('click', () => {
+            selectedRestaurantForFavorite = restaurant;
+            showAddToFavoritesModal();
+        });
+    }
 
     return card;
 }
@@ -400,4 +475,491 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 function degreesToRadians(degrees) {
     return degrees * (Math.PI / 180);
+}
+
+// =============================================================================
+// Authentication Functions
+// =============================================================================
+
+function initializeAuth() {
+    if (authService.isAuthenticated()) {
+        showAuthenticatedUI();
+    } else {
+        showUnauthenticatedUI();
+    }
+}
+
+function showAuthenticatedUI() {
+    document.getElementById('authButtons').classList.add('hidden');
+    document.getElementById('userMenu').classList.remove('hidden');
+    document.getElementById('myListsLink').classList.remove('hidden');
+    document.getElementById('followingLink').classList.remove('hidden');
+
+    const user = authService.getUser();
+    if (user) {
+        document.getElementById('userDisplayName').textContent = user.displayName;
+    }
+}
+
+function showUnauthenticatedUI() {
+    document.getElementById('authButtons').classList.remove('hidden');
+    document.getElementById('userMenu').classList.add('hidden');
+    document.getElementById('myListsLink').classList.add('hidden');
+    document.getElementById('followingLink').classList.add('hidden');
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+    const errorEl = document.getElementById('loginError');
+
+    try {
+        await authService.login(username, password);
+        hideModal('loginModal');
+        showAuthenticatedUI();
+        window.location.reload();
+    } catch (error) {
+        errorEl.textContent = error.message;
+        errorEl.classList.remove('hidden');
+    }
+}
+
+async function handleSignup(e) {
+    e.preventDefault();
+
+    const username = document.getElementById('signupUsername').value;
+    const email = document.getElementById('signupEmail').value;
+    const displayName = document.getElementById('signupDisplayName').value;
+    const password = document.getElementById('signupPassword').value;
+    const errorEl = document.getElementById('signupError');
+
+    try {
+        await authService.register(username, email, password, displayName);
+        hideModal('signupModal');
+        showAuthenticatedUI();
+        window.location.reload();
+    } catch (error) {
+        errorEl.textContent = error.message;
+        errorEl.classList.remove('hidden');
+    }
+}
+
+// =============================================================================
+// Modal Functions
+// =============================================================================
+
+function showModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+}
+
+function hideModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+// =============================================================================
+// Favorites Functions
+// =============================================================================
+
+async function showAddToFavoritesModal() {
+    if (!authService.isAuthenticated()) {
+        showModal('loginModal');
+        return;
+    }
+
+    try {
+        const lists = await favoritesService.getMyLists();
+        const selectList = document.getElementById('selectList');
+
+        // Clear existing options except first
+        selectList.innerHTML = '<option value="">-- Select a list --</option>';
+
+        // Check if user has any lists
+        if (lists.length === 0) {
+            // Auto-create default list
+            const user = authService.getUser();
+            const defaultListName = `${user.displayName}'s favorites`;
+            const newList = await favoritesService.createList(defaultListName, false);
+
+            const option = document.createElement('option');
+            option.value = newList.id;
+            option.textContent = newList.name;
+            option.selected = true;
+            selectList.appendChild(option);
+        } else {
+            lists.forEach(list => {
+                const option = document.createElement('option');
+                option.value = list.id;
+                option.textContent = list.name;
+                selectList.appendChild(option);
+            });
+        }
+
+        showModal('addToFavoritesModal');
+    } catch (error) {
+        console.error('Error loading lists:', error);
+        showError('Failed to load your lists. Please try again.');
+    }
+}
+
+async function handleAddToList() {
+    const listId = document.getElementById('selectList').value;
+    const notes = document.getElementById('restaurantNotes').value;
+    const errorEl = document.getElementById('favoritesError');
+
+    if (!listId) {
+        errorEl.textContent = 'Please select a list';
+        errorEl.classList.remove('hidden');
+        return;
+    }
+
+    if (!selectedRestaurantForFavorite) {
+        errorEl.textContent = 'No restaurant selected';
+        errorEl.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        await favoritesService.addRestaurant(
+            parseInt(listId),
+            selectedRestaurantForFavorite.id,
+            notes || null
+        );
+
+        hideModal('addToFavoritesModal');
+        alert('Restaurant added to your list!');
+
+        // Clear form
+        document.getElementById('restaurantNotes').value = '';
+        errorEl.classList.add('hidden');
+    } catch (error) {
+        errorEl.textContent = error.message;
+        errorEl.classList.remove('hidden');
+    }
+}
+
+async function handleCreateListAndAdd() {
+    const newListName = document.getElementById('newListName').value.trim();
+    const isPublic = document.getElementById('newListPublic').checked;
+    const notes = document.getElementById('restaurantNotes').value;
+    const errorEl = document.getElementById('favoritesError');
+
+    if (!newListName) {
+        errorEl.textContent = 'Please enter a list name';
+        errorEl.classList.remove('hidden');
+        return;
+    }
+
+    if (!selectedRestaurantForFavorite) {
+        errorEl.textContent = 'No restaurant selected';
+        errorEl.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        const newList = await favoritesService.createList(newListName, isPublic);
+
+        await favoritesService.addRestaurant(
+            newList.id,
+            selectedRestaurantForFavorite.id,
+            notes || null
+        );
+
+        hideModal('addToFavoritesModal');
+        alert(`List "${newListName}" created and restaurant added!`);
+
+        // Clear form
+        document.getElementById('newListName').value = '';
+        document.getElementById('newListPublic').checked = false;
+        document.getElementById('restaurantNotes').value = '';
+        errorEl.classList.add('hidden');
+    } catch (error) {
+        errorEl.textContent = error.message;
+        errorEl.classList.remove('hidden');
+    }
+}
+
+// =============================================================================
+// Navigation Functions
+// =============================================================================
+
+async function navigateTo(page) {
+    currentPage = page;
+
+    // Update nav active state
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+
+    const searchSection = document.querySelector('.search-section');
+    const viewToggle = document.querySelector('.view-toggle');
+    const resultsSection = document.querySelector('.results-section');
+    const mainContainer = document.querySelector('main .container');
+
+    if (page === 'home') {
+        document.getElementById('homeLink').classList.add('active');
+        searchSection.style.display = 'block';
+        viewToggle.style.display = 'flex';
+        resultsSection.innerHTML = `
+            <div id="resultsCount" class="results-count"></div>
+            <div id="listView" class="list-view active">
+                <div id="restaurantList" class="restaurant-list"></div>
+            </div>
+            <div id="mapView" class="map-view">
+                <div id="map"></div>
+            </div>
+        `;
+        await loadRestaurants();
+        initializeMap();
+    } else if (page === 'myLists') {
+        document.getElementById('myListsLink').classList.add('active');
+        searchSection.style.display = 'none';
+        viewToggle.style.display = 'none';
+        await showMyListsPage();
+    } else if (page === 'following') {
+        document.getElementById('followingLink').classList.add('active');
+        searchSection.style.display = 'none';
+        viewToggle.style.display = 'none';
+        await showFollowingPage();
+    }
+}
+
+async function showMyListsPage() {
+    const resultsSection = document.querySelector('.results-section');
+    resultsSection.innerHTML = '<div class="page-loading">Loading your lists...</div>';
+
+    try {
+        const lists = await favoritesService.getMyLists();
+
+        let html = `
+            <div class="lists-page">
+                <div class="lists-header">
+                    <h2>My Favorite Lists</h2>
+                    <button class="btn btn-primary" onclick="createNewList()">Create New List</button>
+                </div>
+        `;
+
+        if (lists.length === 0) {
+            html += `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <div class="empty-state-text">No lists yet</div>
+                    <div class="empty-state-subtext">Create your first favorite list</div>
+                </div>
+            `;
+        } else {
+            html += '<div class="lists-grid">';
+            lists.forEach(list => {
+                const shareInfo = list.isPublic && list.shareUrl
+                    ? `<div class="list-share">
+                         <input type="text" readonly value="${window.location.origin}/#/share/${list.shareUrl}" class="share-url-input" id="share-${list.id}">
+                         <button class="btn btn-small" onclick="copyShareUrl('${list.id}')">Copy Link</button>
+                       </div>`
+                    : '';
+
+                html += `
+                    <div class="list-card">
+                        <h3>${list.name}</h3>
+                        <p>${list.itemCount} restaurant${list.itemCount !== 1 ? 's' : ''}</p>
+                        <p>${list.followerCount} follower${list.followerCount !== 1 ? 's' : ''}</p>
+                        <p>${list.isPublic ? '🌐 Public' : '🔒 Private'}</p>
+                        ${shareInfo}
+                        <div class="list-actions">
+                            <button class="btn btn-small" onclick="viewList(${list.id})">View</button>
+                            <button class="btn btn-small" onclick="toggleListVisibility(${list.id}, ${!list.isPublic})">Make ${list.isPublic ? 'Private' : 'Public'}</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteList(${list.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        html += '</div>';
+        resultsSection.innerHTML = html;
+    } catch (error) {
+        resultsSection.innerHTML = '<div class="error-message">Failed to load your lists</div>';
+        console.error('Error loading lists:', error);
+    }
+}
+
+async function showFollowingPage() {
+    const resultsSection = document.querySelector('.results-section');
+    resultsSection.innerHTML = '<div class="page-loading">Loading lists you follow...</div>';
+
+    try {
+        const lists = await favoritesService.getFollowingLists();
+
+        let html = `
+            <div class="lists-page">
+                <div class="lists-header">
+                    <h2>Lists I'm Following</h2>
+                </div>
+        `;
+
+        if (lists.length === 0) {
+            html += `
+                <div class="empty-state">
+                    <div class="empty-state-icon">👥</div>
+                    <div class="empty-state-text">Not following any lists yet</div>
+                    <div class="empty-state-subtext">Discover and follow lists shared by others</div>
+                </div>
+            `;
+        } else {
+            html += '<div class="lists-grid">';
+            lists.forEach(list => {
+                html += `
+                    <div class="list-card">
+                        <h3>${list.name}</h3>
+                        <p>By ${list.userDisplayName}</p>
+                        <p>${list.itemCount} restaurant${list.itemCount !== 1 ? 's' : ''}</p>
+                        <div class="list-actions">
+                            <button class="btn btn-small" onclick="viewList(${list.id})">View</button>
+                            <button class="btn btn-small btn-danger" onclick="unfollowList(${list.id})">Unfollow</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        html += '</div>';
+        resultsSection.innerHTML = html;
+    } catch (error) {
+        resultsSection.innerHTML = '<div class="error-message">Failed to load following lists</div>';
+        console.error('Error loading following lists:', error);
+    }
+}
+
+async function viewList(listId) {
+    const resultsSection = document.querySelector('.results-section');
+    resultsSection.innerHTML = '<div class="page-loading">Loading list...</div>';
+
+    try {
+        const [list, items] = await Promise.all([
+            favoritesService.getList(listId),
+            favoritesService.getListItems(listId)
+        ]);
+
+        let html = `
+            <div class="list-detail-page">
+                <div class="list-header">
+                    <button class="btn btn-small" onclick="navigateTo('${currentPage === 'following' ? 'following' : 'myLists'}')">← Back</button>
+                    <h2>${list.name}</h2>
+                    <p>By ${list.userDisplayName} • ${list.itemCount} restaurants • ${list.followerCount} followers</p>
+                </div>
+        `;
+
+        if (items.length === 0) {
+            html += `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🍽️</div>
+                    <div class="empty-state-text">No restaurants in this list yet</div>
+                </div>
+            `;
+        } else {
+            html += '<div class="restaurant-list">';
+            items.forEach(item => {
+                const restaurant = item.restaurant;
+                const ratingStars = restaurant.rating ? '⭐'.repeat(Math.round(restaurant.rating)) : '';
+
+                html += `
+                    <div class="restaurant-card">
+                        <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+                             alt="${restaurant.name}"
+                             class="restaurant-image"
+                             onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                        <div class="restaurant-info">
+                            <h3 class="restaurant-name">${restaurant.name}</h3>
+                            <div>
+                                <span class="restaurant-category">${restaurant.category}</span>
+                                <span class="restaurant-cuisine">${restaurant.cuisineType}</span>
+                            </div>
+                            <p class="restaurant-address">📍 ${restaurant.address}</p>
+                            ${restaurant.rating ? `<div class="restaurant-rating">${ratingStars} ${restaurant.rating}/5</div>` : ''}
+                            ${restaurant.description ? `<p class="restaurant-description">${restaurant.description}</p>` : ''}
+                            ${item.notes ? `<p class="list-item-notes"><strong>Notes:</strong> ${item.notes}</p>` : ''}
+                `;
+
+                const user = authService.getUser();
+                if (user && list.userId === user.userId) {
+                    html += `<button class="btn btn-small btn-danger" onclick="removeFromList(${listId}, ${item.id})">Remove</button>`;
+                }
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        html += '</div>';
+        resultsSection.innerHTML = html;
+    } catch (error) {
+        resultsSection.innerHTML = '<div class="error-message">Failed to load list</div>';
+        console.error('Error loading list:', error);
+    }
+}
+
+async function createNewList() {
+    const name = prompt('Enter list name:');
+    if (!name) return;
+
+    const isPublic = confirm('Make this list public?');
+
+    try {
+        await favoritesService.createList(name, isPublic);
+        await showMyListsPage();
+    } catch (error) {
+        alert('Failed to create list: ' + error.message);
+    }
+}
+
+async function toggleListVisibility(listId, makePublic) {
+    try {
+        await favoritesService.updateList(listId, undefined, makePublic);
+        await showMyListsPage();
+    } catch (error) {
+        alert('Failed to update list: ' + error.message);
+    }
+}
+
+async function deleteList(listId) {
+    if (!confirm('Are you sure you want to delete this list?')) return;
+
+    try {
+        await favoritesService.deleteList(listId);
+        await showMyListsPage();
+    } catch (error) {
+        alert('Failed to delete list: ' + error.message);
+    }
+}
+
+async function removeFromList(listId, itemId) {
+    if (!confirm('Remove this restaurant from the list?')) return;
+
+    try {
+        await favoritesService.removeRestaurant(listId, itemId);
+        await viewList(listId);
+    } catch (error) {
+        alert('Failed to remove restaurant: ' + error.message);
+    }
+}
+
+async function unfollowList(listId) {
+    if (!confirm('Unfollow this list?')) return;
+
+    try {
+        await favoritesService.unfollowList(listId);
+        await showFollowingPage();
+    } catch (error) {
+        alert('Failed to unfollow list: ' + error.message);
+    }
+}
+
+function copyShareUrl(listId) {
+    const input = document.getElementById(`share-${listId}`);
+    input.select();
+    document.execCommand('copy');
+    alert('Share link copied to clipboard!');
 }
