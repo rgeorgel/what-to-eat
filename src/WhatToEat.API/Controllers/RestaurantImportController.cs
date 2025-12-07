@@ -138,6 +138,125 @@ public class RestaurantImportController : ControllerBase
         return await ImportFromCoordinates(torontoLat, torontoLng, radius, limit, skipDuplicates);
     }
 
+    /// <summary>
+    /// Import a specific restaurant by name and location address
+    /// Example: name="Bar Volo", location="17 St Nicholas St, Toronto, ON"
+    /// </summary>
+    [HttpPost("by-name-and-location")]
+    public async Task<ActionResult<ImportResult>> ImportByNameAndLocation(
+        [FromQuery] string name,
+        [FromQuery] string location,
+        [FromQuery] int limit = 10,
+        [FromQuery] bool skipDuplicates = true)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return BadRequest(new ImportResult
+                {
+                    Success = false,
+                    Message = "Restaurant name is required"
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(location))
+            {
+                return BadRequest(new ImportResult
+                {
+                    Success = false,
+                    Message = "Location is required"
+                });
+            }
+
+            _logger.LogInformation("Searching for restaurant: {Name} at location: {Location}", name, location);
+
+            var restaurants = await _yelpService.SearchRestaurantByNameAndLocationAsync(name, location, limit);
+
+            if (restaurants.Count == 0)
+            {
+                return Ok(new ImportResult
+                {
+                    Success = true,
+                    Message = $"No restaurants found matching '{name}' at '{location}'",
+                    TotalFetched = 0,
+                    TotalSaved = 0,
+                    TotalSkipped = 0
+                });
+            }
+
+            var result = await SaveRestaurants(restaurants, skipDuplicates);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error importing restaurant by name and location: {Name}, {Location}",
+                name, location);
+            return StatusCode(500, new ImportResult
+            {
+                Success = false,
+                Message = $"Error importing restaurant: {ex.Message}"
+            });
+        }
+    }
+
+    /// <summary>
+    /// Import a specific restaurant by name and GPS coordinates
+    /// Example: name="Bar Volo", latitude=43.66564256995945, longitude=-79.38572972779623
+    /// </summary>
+    [HttpPost("by-name-and-coordinates")]
+    public async Task<ActionResult<ImportResult>> ImportByNameAndCoordinates(
+        [FromQuery] string name,
+        [FromQuery] double latitude,
+        [FromQuery] double longitude,
+        [FromQuery] int radius = 1000,
+        [FromQuery] int limit = 10,
+        [FromQuery] bool skipDuplicates = true)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return BadRequest(new ImportResult
+                {
+                    Success = false,
+                    Message = "Restaurant name is required"
+                });
+            }
+
+            _logger.LogInformation("Searching for restaurant: {Name} at coordinates: ({Lat}, {Lng})",
+                name, latitude, longitude);
+
+            var restaurants = await _yelpService.SearchRestaurantByNameAndCoordinatesAsync(
+                name, latitude, longitude, radius, limit);
+
+            if (restaurants.Count == 0)
+            {
+                return Ok(new ImportResult
+                {
+                    Success = true,
+                    Message = $"No restaurants found matching '{name}' at coordinates ({latitude}, {longitude})",
+                    TotalFetched = 0,
+                    TotalSaved = 0,
+                    TotalSkipped = 0
+                });
+            }
+
+            var result = await SaveRestaurants(restaurants, skipDuplicates);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error importing restaurant by name and coordinates: {Name}, ({Lat}, {Lng})",
+                name, latitude, longitude);
+            return StatusCode(500, new ImportResult
+            {
+                Success = false,
+                Message = $"Error importing restaurant: {ex.Message}"
+            });
+        }
+    }
+
     private async Task<ImportResult> SaveRestaurants(List<Restaurant> restaurants, bool skipDuplicates)
     {
         var result = new ImportResult
