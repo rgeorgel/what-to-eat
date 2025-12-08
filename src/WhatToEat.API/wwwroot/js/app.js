@@ -326,6 +326,7 @@ function createRestaurantCard(restaurant) {
         <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
              alt="${restaurant.name}"
              class="restaurant-image"
+             loading="lazy"
              onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
         <div class="restaurant-info">
             <h3 class="restaurant-name">${restaurant.name}</h3>
@@ -1030,6 +1031,7 @@ async function viewList(listId) {
                         <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
                              alt="${restaurant.name}"
                              class="restaurant-image"
+                             loading="lazy"
                              onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
                         <div class="restaurant-info">
                             <h3 class="restaurant-name">${restaurant.name}</h3>
@@ -1239,6 +1241,7 @@ async function showSharedListPage(shareUrl) {
                         <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
                              alt="${restaurant.name}"
                              class="restaurant-image"
+                             loading="lazy"
                              onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
                         <div class="restaurant-info">
                             <h3 class="restaurant-name">${restaurant.name}</h3>
