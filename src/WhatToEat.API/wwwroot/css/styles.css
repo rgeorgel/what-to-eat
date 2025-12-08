@@ -287,6 +287,24 @@ main {
     margin-top: 0.5rem;
 }
 
+.restaurant-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn-directions {
+    background-color: var(--secondary-color);
+    color: white;
+    flex: 1;
+    min-width: 140px;
+}
+
+.btn-directions:hover {
+    background-color: #45b8b0;
+}
+
 /* Map View */
 .map-view {
     display: none;

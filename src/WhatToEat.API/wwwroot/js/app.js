@@ -319,6 +319,9 @@ function createRestaurantCard(restaurant) {
         ? `<button class="btn btn-favorite" data-restaurant-id="${restaurant.id}">❤️ Add to Favorites</button>`
         : '';
 
+    // Escape single quotes in restaurant name for onclick handler
+    const escapedName = restaurant.name.replace(/'/g, "\\'");
+
     card.innerHTML = `
         <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
              alt="${restaurant.name}"
@@ -335,7 +338,12 @@ function createRestaurantCard(restaurant) {
             ${restaurant.description ? `<p class="restaurant-description">${restaurant.description}</p>` : ''}
             ${restaurant.phone ? `<p class="restaurant-phone">📞 ${restaurant.phone}</p>` : ''}
             ${distanceHtml}
-            ${favoriteButtonHtml}
+            <div class="restaurant-actions">
+                <button class="btn btn-small btn-directions" onclick="openDirections(${restaurant.latitude}, ${restaurant.longitude}, '${escapedName}')">
+                    🧭 Get Directions
+                </button>
+                ${favoriteButtonHtml}
+            </div>
         </div>
     `;
 
@@ -395,11 +403,19 @@ function updateMap(restaurants, userLocationOverride = null) {
     restaurants.forEach(restaurant => {
         const marker = L.marker([restaurant.latitude, restaurant.longitude]).addTo(map);
 
+        // Escape single quotes in restaurant name for onclick handler
+        const escapedName = restaurant.name.replace(/'/g, "\\'");
+
         const popupContent = `
             <div class="popup-name">${restaurant.name}</div>
             <div class="popup-category">${restaurant.category} - ${restaurant.cuisineType}</div>
             <div class="popup-address">${restaurant.address}</div>
             ${restaurant.rating ? `<div class="popup-rating">⭐ ${restaurant.rating}/5</div>` : ''}
+            <div style="margin-top: 10px;">
+                <button class="btn btn-small" onclick="openDirections(${restaurant.latitude}, ${restaurant.longitude}, '${escapedName}')" style="width: 100%;">
+                    🧭 Get Directions
+                </button>
+            </div>
         `;
 
         marker.bindPopup(popupContent);
@@ -486,6 +502,19 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 function degreesToRadians(degrees) {
     return degrees * (Math.PI / 180);
+}
+
+// Open directions to restaurant in native maps app
+function openDirections(lat, lng, name) {
+    // Encode the restaurant name for URL
+    const encodedName = encodeURIComponent(name);
+
+    // Use Google Maps universal URL that works on both iOS and Android
+    // This will open in the Google Maps app if installed, otherwise in browser
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodedName}`;
+
+    // Open in new tab/window
+    window.open(url, '_blank');
 }
 
 // =============================================================================
@@ -994,6 +1023,7 @@ async function viewList(listId) {
             items.forEach(item => {
                 const restaurant = item.restaurant;
                 const ratingStars = restaurant.rating ? '⭐'.repeat(Math.round(restaurant.rating)) : '';
+                const escapedName = restaurant.name.replace(/'/g, "\\'");
 
                 html += `
                     <div class="restaurant-card">
@@ -1011,6 +1041,10 @@ async function viewList(listId) {
                             ${restaurant.rating ? `<div class="restaurant-rating">${ratingStars} ${restaurant.rating}/5</div>` : ''}
                             ${restaurant.description ? `<p class="restaurant-description">${restaurant.description}</p>` : ''}
                             ${item.notes ? `<p class="list-item-notes"><strong>Notes:</strong> ${item.notes}</p>` : ''}
+                            <div class="restaurant-actions">
+                                <button class="btn btn-small btn-directions" onclick="openDirections(${restaurant.latitude}, ${restaurant.longitude}, '${escapedName}')">
+                                    🧭 Get Directions
+                                </button>
                 `;
 
                 const user = authService.getUser();
@@ -1019,6 +1053,7 @@ async function viewList(listId) {
                 }
 
                 html += `
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1197,6 +1232,7 @@ async function showSharedListPage(shareUrl) {
             items.forEach(item => {
                 const restaurant = item.restaurant;
                 const ratingStars = restaurant.rating ? '⭐'.repeat(Math.round(restaurant.rating)) : '';
+                const escapedName = restaurant.name.replace(/'/g, "\\'");
 
                 html += `
                     <div class="restaurant-card">
@@ -1214,6 +1250,11 @@ async function showSharedListPage(shareUrl) {
                             ${restaurant.rating ? `<div class="restaurant-rating">${ratingStars} ${restaurant.rating}/5</div>` : ''}
                             ${restaurant.description ? `<p class="restaurant-description">${restaurant.description}</p>` : ''}
                             ${item.notes ? `<p class="list-item-notes"><strong>Notes:</strong> ${item.notes}</p>` : ''}
+                            <div class="restaurant-actions">
+                                <button class="btn btn-small btn-directions" onclick="openDirections(${restaurant.latitude}, ${restaurant.longitude}, '${escapedName}')">
+                                    🧭 Get Directions
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
