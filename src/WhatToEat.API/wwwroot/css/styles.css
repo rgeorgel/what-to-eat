@@ -815,3 +815,218 @@ footer {
         text-align: center;
     }
 }
+
+/* =============================================================================
+   Advertisement Styles
+   ============================================================================= */
+
+.ad-section {
+    margin: 1.5rem 0;
+}
+
+.ad-container {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.ad-label {
+    font-size: 0.75rem;
+    color: var(--gray-color);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+/* Top Banner Ad (Leaderboard: 728x90) */
+.ad-top-banner .ad-container {
+    min-height: 110px;
+}
+
+#ad-top-banner {
+    width: 100%;
+    max-width: 728px;
+    height: 90px;
+    margin: 0 auto;
+}
+
+/* Horizontal Banner Ad (Large Rectangle: 336x280 or Leaderboard) */
+.ad-horizontal-banner .ad-container {
+    min-height: 300px;
+}
+
+#ad-horizontal-banner {
+    width: 100%;
+    max-width: 728px;
+    height: 90px;
+    margin: 0 auto;
+}
+
+/* Sidebar Ad (Medium Rectangle: 300x250) */
+.sidebar-ad {
+    display: none;
+}
+
+.content-with-sidebar {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.content-with-sidebar .restaurant-list {
+    flex: 1;
+}
+
+@media (min-width: 1024px) {
+    .sidebar-ad {
+        display: block;
+        flex-shrink: 0;
+        width: 320px;
+        position: sticky;
+        top: 20px;
+        height: fit-content;
+    }
+
+    #ad-sidebar {
+        width: 300px;
+        height: 600px;
+    }
+}
+
+/* Bottom Banner Ad */
+.ad-bottom-banner .ad-container {
+    min-height: 110px;
+}
+
+#ad-bottom-banner {
+    width: 100%;
+    max-width: 728px;
+    height: 90px;
+    margin: 0 auto;
+}
+
+/* In-Feed Ad (dynamically inserted) */
+.ad-in-feed {
+    grid-column: 1 / -1;
+    margin: 1rem 0;
+}
+
+.ad-in-feed .ad-container {
+    min-height: 280px;
+}
+
+#ad-in-feed {
+    width: 100%;
+    max-width: 336px;
+    height: 280px;
+    margin: 0 auto;
+}
+
+/* Responsive Ad Adjustments */
+@media (max-width: 768px) {
+    /* Hide sidebar on mobile */
+    .sidebar-ad {
+        display: none;
+    }
+
+    .content-with-sidebar {
+        display: block;
+    }
+
+    /* Stack ads vertically and reduce size */
+    #ad-top-banner,
+    #ad-horizontal-banner,
+    #ad-bottom-banner {
+        max-width: 320px;
+        height: 50px;
+    }
+
+    .ad-top-banner .ad-container,
+    .ad-horizontal-banner .ad-container,
+    .ad-bottom-banner .ad-container {
+        min-height: 70px;
+    }
+}
+
+/* =============================================================================
+   Cookie Consent Banner
+   ============================================================================= */
+
+.cookie-consent {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(44, 62, 80, 0.98);
+    color: white;
+    padding: 1.5rem;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+.cookie-consent-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.cookie-consent-content p {
+    flex: 1;
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.cookie-consent-content a {
+    color: var(--secondary-color);
+    text-decoration: underline;
+}
+
+.cookie-consent-content a:hover {
+    color: var(--primary-color);
+}
+
+.cookie-consent-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .cookie-consent {
+        padding: 1rem;
+    }
+
+    .cookie-consent-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .cookie-consent-content p {
+        font-size: 0.9rem;
+    }
+
+    .cookie-consent-actions {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -34,6 +34,14 @@
     </header>
 
     <main class="container">
+        <!-- Top Ad Banner -->
+        <section class="ad-section ad-top-banner">
+            <div class="ad-container">
+                <div class="ad-label">Advertisement</div>
+                <div id="ad-top-banner"></div>
+            </div>
+        </section>
+
         <!-- Search Section -->
         <section class="search-section">
             <div class="search-box">
@@ -80,16 +88,41 @@
         <section class="results-section">
             <div id="resultsCount" class="results-count"></div>
 
+            <!-- Horizontal Ad Banner -->
+            <section class="ad-section ad-horizontal-banner">
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement</div>
+                    <div id="ad-horizontal-banner"></div>
+                </div>
+            </section>
+
             <!-- List View -->
             <div id="listView" class="list-view active">
-                <div id="restaurantList" class="restaurant-list">
-                    <!-- Restaurant cards will be inserted here -->
+                <div class="content-with-sidebar">
+                    <div id="restaurantList" class="restaurant-list">
+                        <!-- Restaurant cards will be inserted here -->
+                    </div>
+                    <!-- Sidebar Ad (Desktop Only) -->
+                    <aside class="sidebar-ad">
+                        <div class="ad-container">
+                            <div class="ad-label">Advertisement</div>
+                            <div id="ad-sidebar"></div>
+                        </div>
+                    </aside>
                 </div>
             </div>
 
             <!-- Map View -->
             <div id="mapView" class="map-view">
                 <div id="map"></div>
+            </div>
+        </section>
+
+        <!-- Bottom Ad Banner -->
+        <section class="ad-section ad-bottom-banner">
+            <div class="ad-container">
+                <div class="ad-label">Advertisement</div>
+                <div id="ad-bottom-banner"></div>
             </div>
         </section>
 
@@ -194,9 +227,30 @@
         </div>
     </div>
 
+    <!-- Cookie Consent Banner -->
+    <div id="cookieConsent" class="cookie-consent hidden">
+        <div class="cookie-consent-content">
+            <p>
+                We use cookies and third-party services (like Google AdSense) to improve your experience and show personalized ads.
+                By continuing to use this site, you agree to our use of cookies.
+                <a href="#" id="privacyPolicyLink">Learn more</a>
+            </p>
+            <div class="cookie-consent-actions">
+                <button id="acceptCookies" class="btn btn-primary btn-small">Accept</button>
+                <button id="declineCookies" class="btn btn-secondary btn-small">Decline</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/favorites.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/ads.js"></script>
+
+    <!-- Google AdSense Script -->
+    <!-- IMPORTANT: Replace 'ca-pub-XXXXXXXXXXXXXXXX' with your actual AdSense Publisher ID -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+            crossorigin="anonymous"></script>
 </body>
 </html>
