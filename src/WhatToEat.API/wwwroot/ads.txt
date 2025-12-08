@@ -1,21 +1,22 @@
-# ads.txt file for Google AdSense
+# ads.txt file for Media.net
 # This file helps prevent advertising fraud by declaring authorized digital sellers
 #
-# IMPORTANT: Replace 'pub-XXXXXXXXXXXXXXXX' with your actual AdSense Publisher ID
-# You can find your publisher ID in your AdSense account dashboard
+# IMPORTANT: Replace 'YOUR_PUBLISHER_ID' with your actual Media.net Publisher ID
+# You can find your publisher ID in your Media.net account dashboard
 #
 # Format: <advertising_system_domain>, <publisher_id>, <account_type>, <certification_authority_id>
 #
-# AdSense accounts are typically 'DIRECT' relationships
-# For more info: https://support.google.com/adsense/answer/7532444
+# Media.net accounts are typically 'DIRECT' relationships
+# For more info: https://www.media.net/adstxt
 
-# Google AdSense
-google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+# Media.net
+media.net, YOUR_PUBLISHER_ID, DIRECT
 
-# Additional ad networks can be added below
-# Example for Media.net (if you use it):
-# media.net, YOUR_MEDIA_NET_ID, DIRECT
+# Note: Media.net uses Yahoo/Bing ad exchange
+# You may also see Yahoo SSP in your account
+yahoo.com, YOUR_PUBLISHER_ID, DIRECT
 
-# Example for other ad exchanges (if applicable):
+# Additional ad networks can be added below if you use multiple networks
+# Example for other networks:
 # appnexus.com, YOUR_APPNEXUS_ID, RESELLER
 # rubiconproject.com, YOUR_RUBICON_ID, RESELLER

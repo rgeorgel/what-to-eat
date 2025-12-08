@@ -139,17 +139,17 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowAll");
 
-// Add Content Security Policy headers for Google AdSense
+// Add Content Security Policy headers for Media.net
 app.Use(async (context, next) =>
 {
-    // Allow Google AdSense scripts and content
+    // Allow Media.net scripts and content
     context.Response.Headers.Append("Content-Security-Policy",
         "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://adservice.google.com https://www.googletagservices.com https://unpkg.com; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://contextual.media.net http://contextual.media.net https://unpkg.com; " +
         "style-src 'self' 'unsafe-inline' https://unpkg.com; " +
         "img-src 'self' data: https: http:; " +
-        "frame-src 'self' https://googleads.g.doubleclick.net https://www.google.com; " +
-        "connect-src 'self' https://pagead2.googlesyndication.com https://adservice.google.com;");
+        "frame-src 'self' https://contextual.media.net http://contextual.media.net; " +
+        "connect-src 'self' https://contextual.media.net http://contextual.media.net;");
 
     await next();
 });
