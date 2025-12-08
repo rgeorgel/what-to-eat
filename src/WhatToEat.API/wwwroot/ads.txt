@@ -1,0 +1,21 @@
+# ads.txt file for Google AdSense
+# This file helps prevent advertising fraud by declaring authorized digital sellers
+#
+# IMPORTANT: Replace 'pub-XXXXXXXXXXXXXXXX' with your actual AdSense Publisher ID
+# You can find your publisher ID in your AdSense account dashboard
+#
+# Format: <advertising_system_domain>, <publisher_id>, <account_type>, <certification_authority_id>
+#
+# AdSense accounts are typically 'DIRECT' relationships
+# For more info: https://support.google.com/adsense/answer/7532444
+
+# Google AdSense
+google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+
+# Additional ad networks can be added below
+# Example for Media.net (if you use it):
+# media.net, YOUR_MEDIA_NET_ID, DIRECT
+
+# Example for other ad exchanges (if applicable):
+# appnexus.com, YOUR_APPNEXUS_ID, RESELLER
+# rubiconproject.com, YOUR_RUBICON_ID, RESELLER
