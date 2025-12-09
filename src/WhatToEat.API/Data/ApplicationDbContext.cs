@@ -15,6 +15,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<FavoriteList> FavoriteLists { get; set; } = null!;
     public DbSet<ListItem> ListItems { get; set; } = null!;
     public DbSet<ListFollower> ListFollowers { get; set; } = null!;
+    public DbSet<NeighborhoodGuide> NeighborhoodGuides { get; set; } = null!;
+    public DbSet<GuideRestaurant> GuideRestaurants { get; set; } = null!;
+    public DbSet<RouteItinerary> RouteItineraries { get; set; } = null!;
+    public DbSet<RouteStop> RouteStops { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,9 +57,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.UserId).IsRequired();
             entity.Property(e => e.ShareUrl).HasMaxLength(100);
+            entity.Property(e => e.ListType).IsRequired().HasDefaultValue(ListType.Favorites);
 
             entity.HasIndex(e => e.ShareUrl).IsUnique();
             entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.ListType);
 
             entity.HasOne(e => e.User)
                 .WithMany(u => u.FavoriteLists)
@@ -97,6 +103,81 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.FavoriteList)
                 .WithMany(fl => fl.Followers)
                 .HasForeignKey(e => e.FavoriteListId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure NeighborhoodGuide entity
+        modelBuilder.Entity<NeighborhoodGuide>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Description).IsRequired().HasMaxLength(1000);
+            entity.Property(e => e.NeighborhoodName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
+
+            entity.HasIndex(e => e.NeighborhoodName);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.IsOfficial);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure GuideRestaurant entity
+        modelBuilder.Entity<GuideRestaurant>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Description).HasMaxLength(500);
+
+            entity.HasIndex(e => new { e.NeighborhoodGuideId, e.RestaurantId }).IsUnique();
+            entity.HasIndex(e => new { e.NeighborhoodGuideId, e.Order });
+
+            entity.HasOne(e => e.NeighborhoodGuide)
+                .WithMany(ng => ng.GuideRestaurants)
+                .HasForeignKey(e => e.NeighborhoodGuideId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Restaurant)
+                .WithMany()
+                .HasForeignKey(e => e.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure RouteItinerary entity
+        modelBuilder.Entity<RouteItinerary>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.UserId).IsRequired();
+
+            entity.HasIndex(e => e.UserId);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure RouteStop entity
+        modelBuilder.Entity<RouteStop>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+
+            entity.HasIndex(e => new { e.RouteItineraryId, e.Order });
+            entity.HasIndex(e => new { e.RouteItineraryId, e.RestaurantId }).IsUnique();
+
+            entity.HasOne(e => e.RouteItinerary)
+                .WithMany(ri => ri.RouteStops)
+                .HasForeignKey(e => e.RouteItineraryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Restaurant)
+                .WithMany()
+                .HasForeignKey(e => e.RestaurantId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

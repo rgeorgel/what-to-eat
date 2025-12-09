@@ -42,6 +42,7 @@ public class FavoriteListsController : ControllerBase
                 UserDisplayName = fl.User.DisplayName,
                 IsPublic = fl.IsPublic,
                 ShareUrl = fl.ShareUrl,
+                ListType = fl.ListType,
                 ItemCount = fl.ListItems.Count,
                 FollowerCount = fl.Followers.Count,
                 IsFollowing = false,
@@ -91,6 +92,7 @@ public class FavoriteListsController : ControllerBase
             UserDisplayName = list.User.DisplayName,
             IsPublic = list.IsPublic,
             ShareUrl = list.ShareUrl,
+            ListType = list.ListType,
             ItemCount = list.ListItems.Count,
             FollowerCount = list.Followers.Count,
             IsFollowing = isFollowing,
@@ -124,6 +126,7 @@ public class FavoriteListsController : ControllerBase
             UserDisplayName = list.User.DisplayName,
             IsPublic = list.IsPublic,
             ShareUrl = list.ShareUrl,
+            ListType = list.ListType,
             ItemCount = list.ListItems.Count,
             FollowerCount = list.Followers.Count,
             IsFollowing = isFollowing,
@@ -147,7 +150,8 @@ public class FavoriteListsController : ControllerBase
             Name = createDto.Name,
             UserId = userId,
             IsPublic = createDto.IsPublic,
-            ShareUrl = createDto.IsPublic ? GenerateShareUrl() : null
+            ShareUrl = createDto.IsPublic ? GenerateShareUrl() : null,
+            ListType = createDto.ListType
         };
 
         _context.FavoriteLists.Add(list);
@@ -161,6 +165,7 @@ public class FavoriteListsController : ControllerBase
             UserDisplayName = user.DisplayName,
             IsPublic = list.IsPublic,
             ShareUrl = list.ShareUrl,
+            ListType = list.ListType,
             ItemCount = 0,
             FollowerCount = 0,
             IsFollowing = false,
@@ -409,6 +414,7 @@ public class FavoriteListsController : ControllerBase
                 UserDisplayName = lf.FavoriteList.User.DisplayName,
                 IsPublic = lf.FavoriteList.IsPublic,
                 ShareUrl = lf.FavoriteList.ShareUrl,
+                ListType = lf.FavoriteList.ListType,
                 ItemCount = lf.FavoriteList.ListItems.Count,
                 FollowerCount = lf.FavoriteList.Followers.Count,
                 IsFollowing = true,
@@ -470,6 +476,7 @@ public class FavoriteListsController : ControllerBase
             UserDisplayName = fl.User.DisplayName,
             IsPublic = fl.IsPublic,
             ShareUrl = fl.ShareUrl,
+            ListType = fl.ListType,
             ItemCount = fl.ListItems.Count,
             FollowerCount = fl.Followers.Count,
             IsFollowing = followingListIds.Contains(fl.Id),
@@ -478,6 +485,58 @@ public class FavoriteListsController : ControllerBase
         }).ToList();
 
         return Ok(result);
+    }
+
+    // GET: api/favoritelists/by-type/{listType} - Get lists by type (e.g., Watchlist, Favorites)
+    [HttpGet("by-type/{listType}")]
+    public async Task<ActionResult<IEnumerable<FavoriteListDto>>> GetListsByType(ListType listType)
+    {
+        var userId = _userManager.GetUserId(User);
+        if (userId == null) return Unauthorized();
+
+        var lists = await _context.FavoriteLists
+            .Include(fl => fl.User)
+            .Include(fl => fl.ListItems)
+            .Include(fl => fl.Followers)
+            .Where(fl => fl.UserId == userId && fl.ListType == listType)
+            .Select(fl => new FavoriteListDto
+            {
+                Id = fl.Id,
+                Name = fl.Name,
+                UserId = fl.UserId,
+                UserDisplayName = fl.User.DisplayName,
+                IsPublic = fl.IsPublic,
+                ShareUrl = fl.ShareUrl,
+                ListType = fl.ListType,
+                ItemCount = fl.ListItems.Count,
+                FollowerCount = fl.Followers.Count,
+                IsFollowing = false,
+                CreatedAt = fl.CreatedAt,
+                UpdatedAt = fl.UpdatedAt
+            })
+            .ToListAsync();
+
+        return Ok(lists);
+    }
+
+    // POST: api/favoritelists/{listId}/change-type - Change list type (e.g., from Watchlist to Favorites)
+    [HttpPost("{listId}/change-type")]
+    public async Task<IActionResult> ChangeListType(int listId, [FromQuery] ListType newType)
+    {
+        var userId = _userManager.GetUserId(User);
+        if (userId == null) return Unauthorized();
+
+        var list = await _context.FavoriteLists.FindAsync(listId);
+        if (list == null) return NotFound();
+
+        if (list.UserId != userId) return Forbid();
+
+        list.ListType = newType;
+        list.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "List type updated successfully", listType = newType });
     }
 
     private string GenerateShareUrl()

@@ -49,6 +49,9 @@ function setupEventListeners() {
     // Near me button
     document.getElementById('nearMeBtn').addEventListener('click', handleNearMe);
 
+    // Decide for me button
+    document.getElementById('decideMeBtn').addEventListener('click', showDecideForMeModal);
+
     // View toggle buttons
     document.getElementById('listViewBtn').addEventListener('click', () => toggleView('list'));
     document.getElementById('mapViewBtn').addEventListener('click', () => toggleView('map'));
@@ -117,6 +120,14 @@ function setupEventListeners() {
     document.getElementById('addToListBtn').addEventListener('click', handleAddToList);
     document.getElementById('createListBtn').addEventListener('click', handleCreateListAndAdd);
 
+    // Decide for me modal
+    document.getElementById('useLocationFilter').addEventListener('change', (e) => {
+        document.getElementById('radiusGroup').style.display = e.target.checked ? 'block' : 'none';
+    });
+    document.getElementById('pickRandomBtn').addEventListener('click', handlePickRandom);
+    document.getElementById('tryAnotherBtn').addEventListener('click', handlePickRandom);
+    document.getElementById('viewOnMapBtn').addEventListener('click', handleViewRandomOnMap);
+
     // Hash change for routing
     window.addEventListener('hashchange', handleHashChange);
 }
@@ -128,11 +139,17 @@ async function loadFilterOptions() {
         const categories = await categoriesResponse.json();
 
         const categorySelect = document.getElementById('categoryFilter');
+        const randomCategorySelect = document.getElementById('randomCategoryFilter');
         categories.forEach(category => {
             const option = document.createElement('option');
             option.value = category;
             option.textContent = category;
             categorySelect.appendChild(option);
+
+            const randomOption = document.createElement('option');
+            randomOption.value = category;
+            randomOption.textContent = category;
+            randomCategorySelect.appendChild(randomOption);
         });
 
         // Load cuisine types
@@ -140,11 +157,17 @@ async function loadFilterOptions() {
         const cuisines = await cuisinesResponse.json();
 
         const cuisineSelect = document.getElementById('cuisineFilter');
+        const randomCuisineSelect = document.getElementById('randomCuisineFilter');
         cuisines.forEach(cuisine => {
             const option = document.createElement('option');
             option.value = cuisine;
             option.textContent = cuisine;
             cuisineSelect.appendChild(option);
+
+            const randomOption = document.createElement('option');
+            randomOption.value = cuisine;
+            randomOption.textContent = cuisine;
+            randomCuisineSelect.appendChild(randomOption);
         });
     } catch (error) {
         console.error('Error loading filter options:', error);
@@ -319,6 +342,10 @@ function createRestaurantCard(restaurant) {
         ? `<button class="btn btn-favorite" data-restaurant-id="${restaurant.id}">❤️ Add to Favorites</button>`
         : '';
 
+    const watchlistButtonHtml = authService.isAuthenticated()
+        ? `<button class="btn btn-watchlist" data-restaurant-id="${restaurant.id}">⭐ Want to Try</button>`
+        : '';
+
     // Escape single quotes in restaurant name for onclick handler
     const escapedName = restaurant.name.replace(/'/g, "\\'");
 
@@ -343,6 +370,7 @@ function createRestaurantCard(restaurant) {
                 <button class="btn btn-small btn-directions" onclick="openDirections(${restaurant.latitude}, ${restaurant.longitude}, '${escapedName}')">
                     🧭 Get Directions
                 </button>
+                ${watchlistButtonHtml}
                 ${favoriteButtonHtml}
             </div>
         </div>
@@ -354,6 +382,12 @@ function createRestaurantCard(restaurant) {
         favoriteBtn.addEventListener('click', () => {
             selectedRestaurantForFavorite = restaurant;
             showAddToFavoritesModal();
+        });
+
+        const watchlistBtn = card.querySelector('.btn-watchlist');
+        watchlistBtn.addEventListener('click', () => {
+            selectedRestaurantForFavorite = restaurant;
+            handleQuickAddToWatchlist(restaurant);
         });
     }
 
@@ -485,6 +519,21 @@ function hideError() {
     errorElement.classList.add('hidden');
 }
 
+function showSuccess(message) {
+    const errorElement = document.getElementById('errorMessage');
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden');
+    errorElement.style.backgroundColor = 'var(--success-color)';
+    errorElement.style.color = 'white';
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        hideError();
+        errorElement.style.backgroundColor = '';
+        errorElement.style.color = '';
+    }, 3000);
+}
+
 // Helper function to calculate distance between two coordinates (Haversine formula)
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const earthRadiusKm = 6371;
@@ -597,6 +646,136 @@ async function handleSignup(e) {
 }
 
 // =============================================================================
+// Decide For Me Functions
+// =============================================================================
+
+let lastRandomRestaurant = null;
+
+function showDecideForMeModal() {
+    // Reset modal to options view
+    document.getElementById('decideForMeOptions').classList.remove('hidden');
+    document.getElementById('randomResult').classList.add('hidden');
+    document.getElementById('randomError').classList.add('hidden');
+
+    showModal('decideForMeModal');
+}
+
+async function handlePickRandom() {
+    const useLocation = document.getElementById('useLocationFilter').checked;
+    const category = document.getElementById('randomCategoryFilter').value;
+    const cuisineType = document.getElementById('randomCuisineFilter').value;
+    const minRating = document.getElementById('minRatingFilter').value;
+    const radiusKm = document.getElementById('randomRadiusFilter').value;
+
+    const errorEl = document.getElementById('randomError');
+    errorEl.classList.add('hidden');
+
+    try {
+        const params = new URLSearchParams();
+
+        if (category) params.append('category', category);
+        if (cuisineType) params.append('cuisineType', cuisineType);
+        if (minRating) params.append('minRating', minRating);
+
+        if (useLocation) {
+            if (!navigator.geolocation) {
+                throw new Error('Geolocation is not supported by your browser');
+            }
+
+            // Get user location
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+
+            params.append('latitude', position.coords.latitude.toString());
+            params.append('longitude', position.coords.longitude.toString());
+            params.append('radiusKm', radiusKm);
+        }
+
+        const response = await fetch(`${API_BASE_URL}/restaurants/random?${params.toString()}`);
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error('No restaurants found matching your criteria. Try adjusting your filters!');
+            }
+            throw new Error('Failed to fetch random restaurant');
+        }
+
+        const restaurant = await response.json();
+        lastRandomRestaurant = restaurant;
+        displayRandomRestaurant(restaurant);
+
+    } catch (error) {
+        console.error('Error fetching random restaurant:', error);
+        errorEl.textContent = error.message;
+        errorEl.classList.remove('hidden');
+    }
+}
+
+function displayRandomRestaurant(restaurant) {
+    const detailsContainer = document.getElementById('randomRestaurantDetails');
+
+    const ratingStars = restaurant.rating ? '⭐'.repeat(Math.round(restaurant.rating)) : '';
+
+    const favoriteButtonHtml = authService.isAuthenticated()
+        ? `<button class="btn btn-favorite" onclick="addRandomToFavorites()">❤️ Add to Favorites</button>`
+        : '';
+
+    detailsContainer.innerHTML = `
+        <div class="random-restaurant-image">
+            <img src="${restaurant.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image'}"
+                 alt="${restaurant.name}"
+                 onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=No+Image'">
+        </div>
+        <h3>${restaurant.name}</h3>
+        <div>
+            <span class="restaurant-category">${restaurant.category}</span>
+            <span class="restaurant-cuisine">${restaurant.cuisineType}</span>
+        </div>
+        <p class="restaurant-address">📍 ${restaurant.address}</p>
+        ${restaurant.rating ? `<div class="restaurant-rating">${ratingStars} ${restaurant.rating}/5</div>` : ''}
+        ${restaurant.description ? `<p class="restaurant-description">${restaurant.description}</p>` : ''}
+        ${restaurant.phone ? `<p class="restaurant-phone">📞 ${restaurant.phone}</p>` : ''}
+        ${favoriteButtonHtml}
+    `;
+
+    // Hide options and show result
+    document.getElementById('decideForMeOptions').classList.add('hidden');
+    document.getElementById('randomResult').classList.remove('hidden');
+}
+
+function handleViewRandomOnMap() {
+    if (!lastRandomRestaurant) return;
+
+    hideModal('decideForMeModal');
+
+    // Switch to map view
+    toggleView('map');
+
+    // Center map on the restaurant
+    if (map) {
+        map.setView([lastRandomRestaurant.latitude, lastRandomRestaurant.longitude], 15);
+
+        // Highlight the restaurant marker
+        setTimeout(() => {
+            markers.forEach(marker => {
+                if (marker.restaurantId === lastRandomRestaurant.id) {
+                    marker.openPopup();
+                }
+            });
+        }, 500);
+    }
+}
+
+function addRandomToFavorites() {
+    if (lastRandomRestaurant) {
+        selectedRestaurantForFavorite = lastRandomRestaurant;
+        hideModal('decideForMeModal');
+        showAddToFavoritesModal();
+    }
+}
+
+// =============================================================================
 // Modal Functions
 // =============================================================================
 
@@ -611,6 +790,36 @@ function hideModal(modalId) {
 // =============================================================================
 // Favorites Functions
 // =============================================================================
+
+async function handleQuickAddToWatchlist(restaurant) {
+    if (!authService.isAuthenticated()) {
+        showModal('loginModal');
+        return;
+    }
+
+    try {
+        // Get or create watchlist
+        let watchlists = await favoritesService.getListsByType(ListType.Watchlist);
+
+        let watchlist;
+        if (watchlists.length === 0) {
+            // Create default watchlist
+            watchlist = await favoritesService.createList('Want to Try', false, ListType.Watchlist);
+        } else {
+            // Use first watchlist
+            watchlist = watchlists[0];
+        }
+
+        // Add restaurant to watchlist
+        await favoritesService.addRestaurant(watchlist.id, restaurant.id, null);
+
+        // Show success message
+        showSuccess(`Added "${restaurant.name}" to your watchlist!`);
+    } catch (error) {
+        console.error('Error adding to watchlist:', error);
+        showError(error.message || 'Failed to add to watchlist. It may already be in your list.');
+    }
+}
 
 async function showAddToFavoritesModal() {
     if (!authService.isAuthenticated()) {
