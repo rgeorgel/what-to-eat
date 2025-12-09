@@ -37,14 +37,14 @@ class FavoritesService {
         return await response.json();
     }
 
-    async createList(name, isPublic = false) {
+    async createList(name, isPublic = false, listType = 0) {
         const response = await fetch(this.baseUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 ...authService.getAuthHeaders()
             },
-            body: JSON.stringify({ name, isPublic })
+            body: JSON.stringify({ name, isPublic, listType })
         });
 
         if (!response.ok) throw new Error('Failed to create list');
@@ -172,7 +172,37 @@ class FavoritesService {
         if (!response.ok) throw new Error('Failed to fetch public lists');
         return await response.json();
     }
+
+    async getListsByType(listType) {
+        const response = await fetch(`${this.baseUrl}/by-type/${listType}`, {
+            headers: {
+                ...authService.getAuthHeaders()
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch lists by type');
+        return await response.json();
+    }
+
+    async changeListType(listId, newType) {
+        const response = await fetch(`${this.baseUrl}/${listId}/change-type?newType=${newType}`, {
+            method: 'POST',
+            headers: {
+                ...authService.getAuthHeaders()
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to change list type');
+        return await response.json();
+    }
 }
+
+// ListType enum (matching backend)
+const ListType = {
+    Favorites: 0,
+    Watchlist: 1,
+    Visited: 2
+};
 
 // Create singleton instance
 const favoritesService = new FavoritesService();

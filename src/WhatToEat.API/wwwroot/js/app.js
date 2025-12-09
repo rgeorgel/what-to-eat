@@ -342,6 +342,10 @@ function createRestaurantCard(restaurant) {
         ? `<button class="btn btn-favorite" data-restaurant-id="${restaurant.id}">❤️ Add to Favorites</button>`
         : '';
 
+    const watchlistButtonHtml = authService.isAuthenticated()
+        ? `<button class="btn btn-watchlist" data-restaurant-id="${restaurant.id}">⭐ Want to Try</button>`
+        : '';
+
     // Escape single quotes in restaurant name for onclick handler
     const escapedName = restaurant.name.replace(/'/g, "\\'");
 
@@ -366,6 +370,7 @@ function createRestaurantCard(restaurant) {
                 <button class="btn btn-small btn-directions" onclick="openDirections(${restaurant.latitude}, ${restaurant.longitude}, '${escapedName}')">
                     🧭 Get Directions
                 </button>
+                ${watchlistButtonHtml}
                 ${favoriteButtonHtml}
             </div>
         </div>
@@ -377,6 +382,12 @@ function createRestaurantCard(restaurant) {
         favoriteBtn.addEventListener('click', () => {
             selectedRestaurantForFavorite = restaurant;
             showAddToFavoritesModal();
+        });
+
+        const watchlistBtn = card.querySelector('.btn-watchlist');
+        watchlistBtn.addEventListener('click', () => {
+            selectedRestaurantForFavorite = restaurant;
+            handleQuickAddToWatchlist(restaurant);
         });
     }
 
@@ -506,6 +517,21 @@ function showError(message) {
 function hideError() {
     const errorElement = document.getElementById('errorMessage');
     errorElement.classList.add('hidden');
+}
+
+function showSuccess(message) {
+    const errorElement = document.getElementById('errorMessage');
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden');
+    errorElement.style.backgroundColor = 'var(--success-color)';
+    errorElement.style.color = 'white';
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        hideError();
+        errorElement.style.backgroundColor = '';
+        errorElement.style.color = '';
+    }, 3000);
 }
 
 // Helper function to calculate distance between two coordinates (Haversine formula)
@@ -764,6 +790,36 @@ function hideModal(modalId) {
 // =============================================================================
 // Favorites Functions
 // =============================================================================
+
+async function handleQuickAddToWatchlist(restaurant) {
+    if (!authService.isAuthenticated()) {
+        showModal('loginModal');
+        return;
+    }
+
+    try {
+        // Get or create watchlist
+        let watchlists = await favoritesService.getListsByType(ListType.Watchlist);
+
+        let watchlist;
+        if (watchlists.length === 0) {
+            // Create default watchlist
+            watchlist = await favoritesService.createList('Want to Try', false, ListType.Watchlist);
+        } else {
+            // Use first watchlist
+            watchlist = watchlists[0];
+        }
+
+        // Add restaurant to watchlist
+        await favoritesService.addRestaurant(watchlist.id, restaurant.id, null);
+
+        // Show success message
+        showSuccess(`Added "${restaurant.name}" to your watchlist!`);
+    } catch (error) {
+        console.error('Error adding to watchlist:', error);
+        showError(error.message || 'Failed to add to watchlist. It may already be in your list.');
+    }
+}
 
 async function showAddToFavoritesModal() {
     if (!authService.isAuthenticated()) {

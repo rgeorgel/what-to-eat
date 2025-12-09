@@ -135,6 +135,18 @@ main {
     box-shadow: var(--shadow-lg);
 }
 
+.btn-watchlist {
+    background-color: var(--warning-color);
+    color: var(--dark-color);
+    font-weight: 500;
+}
+
+.btn-watchlist:hover {
+    background-color: #ffc107;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
 .btn .icon {
     margin-right: 0.5rem;
 }
