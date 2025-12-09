@@ -42,6 +42,9 @@
                 <button id="nearMeBtn" class="btn btn-secondary">
                     <span class="icon">📍</span> Near Me
                 </button>
+                <button id="decideMeBtn" class="btn btn-special">
+                    <span class="icon">🎲</span> Decide For Me!
+                </button>
             </div>
 
             <div class="filters">
@@ -191,6 +194,66 @@
                 <button id="createListBtn" class="btn btn-secondary">Create List & Add</button>
             </div>
             <div id="favoritesError" class="error-message hidden"></div>
+        </div>
+    </div>
+
+    <!-- Decide For Me Modal -->
+    <div id="decideForMeModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" data-modal="decideForMeModal">&times;</span>
+            <h2>🎲 Decide For Me!</h2>
+            <div id="decideForMeOptions">
+                <p>Let me pick a restaurant for you!</p>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="useLocationFilter" checked>
+                        Use my current location
+                    </label>
+                </div>
+                <div class="form-group" id="radiusGroup">
+                    <label for="randomRadiusFilter">Maximum Distance:</label>
+                    <select id="randomRadiusFilter">
+                        <option value="1">1 km</option>
+                        <option value="2">2 km</option>
+                        <option value="5" selected>5 km</option>
+                        <option value="10">10 km</option>
+                        <option value="20">20 km</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="randomCategoryFilter">Category (optional):</label>
+                    <select id="randomCategoryFilter">
+                        <option value="">Any Category</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="randomCuisineFilter">Cuisine (optional):</label>
+                    <select id="randomCuisineFilter">
+                        <option value="">Any Cuisine</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="minRatingFilter">Minimum Rating:</label>
+                    <select id="minRatingFilter">
+                        <option value="">Any Rating</option>
+                        <option value="3.0">3.0+</option>
+                        <option value="3.5">3.5+</option>
+                        <option value="4.0" selected>4.0+</option>
+                        <option value="4.5">4.5+</option>
+                    </select>
+                </div>
+                <button id="pickRandomBtn" class="btn btn-primary">Pick a Restaurant!</button>
+            </div>
+            <div id="randomResult" class="random-result hidden">
+                <div class="random-restaurant-card">
+                    <div id="randomRestaurantDetails"></div>
+                    <div class="random-actions">
+                        <button id="tryAnotherBtn" class="btn btn-secondary">Try Another</button>
+                        <button id="viewOnMapBtn" class="btn btn-primary">View on Map</button>
+                    </div>
+                </div>
+            </div>
+            <div id="randomError" class="error-message hidden"></div>
         </div>
     </div>
 

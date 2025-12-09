@@ -7,6 +7,7 @@ public class FavoriteList
     public string UserId { get; set; } = string.Empty;
     public bool IsPublic { get; set; } = false;
     public string? ShareUrl { get; set; } // Unique URL for sharing
+    public ListType ListType { get; set; } = ListType.Favorites;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

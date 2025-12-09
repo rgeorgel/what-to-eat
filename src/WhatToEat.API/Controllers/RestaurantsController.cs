@@ -234,4 +234,56 @@ public class RestaurantsController : ControllerBase
     {
         return await _context.Restaurants.AnyAsync(e => e.Id == id);
     }
+
+    /// <summary>
+    /// Get a random restaurant based on optional filters
+    /// </summary>
+    [HttpGet("random")]
+    public async Task<ActionResult<Restaurant>> GetRandomRestaurant(
+        [FromQuery] double? latitude,
+        [FromQuery] double? longitude,
+        [FromQuery] double? radiusKm,
+        [FromQuery] string? category,
+        [FromQuery] string? cuisineType,
+        [FromQuery] decimal? minRating)
+    {
+        var query = _context.Restaurants.AsQueryable();
+
+        // Apply filters
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            query = query.Where(r => r.Category.ToLower().Contains(category.ToLower()));
+        }
+
+        if (!string.IsNullOrWhiteSpace(cuisineType))
+        {
+            query = query.Where(r => r.CuisineType.ToLower().Contains(cuisineType.ToLower()));
+        }
+
+        if (minRating.HasValue)
+        {
+            query = query.Where(r => r.Rating >= minRating.Value);
+        }
+
+        var restaurants = await query.ToListAsync();
+
+        // Filter by location if provided
+        if (latitude.HasValue && longitude.HasValue && radiusKm.HasValue)
+        {
+            restaurants = restaurants
+                .Where(r => CalculateDistance(latitude.Value, longitude.Value, r.Latitude, r.Longitude) <= radiusKm.Value)
+                .ToList();
+        }
+
+        if (!restaurants.Any())
+        {
+            return NotFound(new { message = "No restaurants found matching the criteria" });
+        }
+
+        // Select random restaurant
+        var random = new Random();
+        var randomRestaurant = restaurants[random.Next(restaurants.Count)];
+
+        return randomRestaurant;
+    }
 }

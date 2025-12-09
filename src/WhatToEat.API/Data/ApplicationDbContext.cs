@@ -53,9 +53,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.UserId).IsRequired();
             entity.Property(e => e.ShareUrl).HasMaxLength(100);
+            entity.Property(e => e.ListType).IsRequired().HasDefaultValue(ListType.Favorites);
 
             entity.HasIndex(e => e.ShareUrl).IsUnique();
             entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.ListType);
 
             entity.HasOne(e => e.User)
                 .WithMany(u => u.FavoriteLists)
