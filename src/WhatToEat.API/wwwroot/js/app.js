@@ -70,9 +70,17 @@ function setupEventListeners() {
         e.preventDefault();
         navigateTo('home');
     });
+    document.getElementById('guidesLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo('guides');
+    });
     document.getElementById('myListsLink').addEventListener('click', (e) => {
         e.preventDefault();
         navigateTo('myLists');
+    });
+    document.getElementById('routesLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo('routes');
     });
     document.getElementById('followingLink').addEventListener('click', (e) => {
         e.preventDefault();
