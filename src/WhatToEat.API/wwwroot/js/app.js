@@ -507,12 +507,18 @@ function degreesToRadians(degrees) {
 
 // Open directions to restaurant in native maps app
 function openDirections(lat, lng, name) {
-    // Encode the restaurant name for URL
+    // Use the restaurant name as the destination so Google Maps shows the actual place
+    // This is better than just coordinates because:
+    // 1. It shows the business name and details in Google Maps
+    // 2. If the user cancels directions, they still see the restaurant info
+    // 3. Google Maps can find the correct location by name
     const encodedName = encodeURIComponent(name);
 
-    // Use Google Maps universal URL that works on both iOS and Android
-    // This will open in the Google Maps app if installed, otherwise in browser
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodedName}`;
+    // Fallback: include coordinates to help locate the exact place
+    const coordsQuery = encodeURIComponent(`${lat},${lng}`);
+
+    // Try to search by name first, with coordinates as backup
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodedName}+${coordsQuery}`;
 
     // Open in new tab/window
     window.open(url, '_blank');
