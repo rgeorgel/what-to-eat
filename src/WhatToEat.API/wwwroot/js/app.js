@@ -1001,6 +1001,16 @@ async function navigateTo(page, param) {
         searchSection.style.display = 'none';
         viewToggle.style.display = 'none';
         await showDiscoverPage();
+    } else if (page === 'guides') {
+        document.getElementById('guidesLink').classList.add('active');
+        searchSection.style.display = 'none';
+        viewToggle.style.display = 'none';
+        await showGuidesPage();
+    } else if (page === 'routes') {
+        document.getElementById('routesLink').classList.add('active');
+        searchSection.style.display = 'none';
+        viewToggle.style.display = 'none';
+        await showRoutesPage();
     } else if (page === 'share') {
         // Don't highlight any nav link for shared pages
         searchSection.style.display = 'none';
@@ -1198,6 +1208,448 @@ async function showDiscoverPage() {
     } catch (error) {
         resultsSection.innerHTML = '<div class="error-message">Failed to load public lists</div>';
         console.error('Error loading public lists:', error);
+    }
+}
+
+// =============================================================================
+// Neighborhood Guides Page Functions
+// =============================================================================
+
+async function showGuidesPage() {
+    const resultsSection = document.querySelector('.results-section');
+    resultsSection.innerHTML = '<div class="page-loading">Loading guides...</div>';
+
+    try {
+        const guides = await guidesService.getAllGuides();
+
+        let html = `
+            <div class="guides-page">
+                <div class="page-header">
+                    <h2>🗺️ Neighborhood Guides</h2>
+                    <p class="subheader">Discover curated restaurant collections by neighborhood</p>
+                </div>
+                ${authService.isAuthenticated() ? '<button class="btn btn-primary" onclick="showCreateGuideModal()">Create Guide</button>' : ''}
+        `;
+
+        if (guides.length === 0) {
+            html += `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🗺️</div>
+                    <div class="empty-state-text">No guides yet</div>
+                    <div class="empty-state-subtext">Be the first to create a neighborhood guide!</div>
+                </div>
+            `;
+        } else {
+            html += '<div class="guides-grid">';
+            guides.forEach(guide => {
+                html += `
+                    <div class="guide-card" onclick="viewGuide(${guide.id})">
+                        ${guide.imageUrl ? `<img src="${guide.imageUrl}" alt="${guide.title}" class="guide-image">` : '<div class="guide-image-placeholder">🗺️</div>'}
+                        <div class="guide-content">
+                            <h3>${guide.title}</h3>
+                            ${guide.isOfficial ? '<span class="badge badge-official">Official</span>' : ''}
+                            <p class="guide-neighborhood">📍 ${guide.neighborhoodName}</p>
+                            <p class="guide-description">${guide.description.substring(0, 100)}${guide.description.length > 100 ? '...' : ''}</p>
+                            <p class="guide-meta">By ${guide.userDisplayName} • ${guide.restaurantCount} restaurant${guide.restaurantCount !== 1 ? 's' : ''}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        html += '</div>';
+        resultsSection.innerHTML = html;
+    } catch (error) {
+        resultsSection.innerHTML = '<div class="error-message">Failed to load guides</div>';
+        console.error('Error loading guides:', error);
+    }
+}
+
+async function viewGuide(guideId) {
+    const resultsSection = document.querySelector('.results-section');
+    resultsSection.innerHTML = '<div class="page-loading">Loading guide...</div>';
+
+    try {
+        const [guide, restaurants] = await Promise.all([
+            guidesService.getGuide(guideId),
+            guidesService.getGuideRestaurants(guideId)
+        ]);
+
+        const currentUser = authService.getUser();
+        const isOwner = currentUser && guide.userId === currentUser.userId;
+
+        let html = `
+            <div class="guide-detail-page">
+                <button class="btn btn-secondary" onclick="navigateTo('guides')">← Back to Guides</button>
+                <div class="guide-detail-header">
+                    ${guide.imageUrl ? `<img src="${guide.imageUrl}" alt="${guide.title}" class="guide-detail-image">` : ''}
+                    <h2>${guide.title}</h2>
+                    ${guide.isOfficial ? '<span class="badge badge-official">Official Guide</span>' : ''}
+                    <p class="guide-neighborhood">📍 ${guide.neighborhoodName}</p>
+                    <p class="guide-description">${guide.description}</p>
+                    <p class="guide-meta">Created by ${guide.userDisplayName}</p>
+                    ${isOwner ? `<button class="btn btn-danger" onclick="deleteGuide(${guide.id})">Delete Guide</button>` : ''}
+                </div>
+                <h3>Restaurants in this Guide</h3>
+        `;
+
+        if (restaurants.length === 0) {
+            html += `
+                <div class="empty-state">
+                    <div class="empty-state-text">No restaurants in this guide yet</div>
+                </div>
+            `;
+        } else {
+            html += '<div class="guide-restaurants">';
+            restaurants.forEach(item => {
+                const restaurant = item.restaurant;
+                const ratingStars = restaurant.rating ? '⭐'.repeat(Math.round(restaurant.rating)) : '';
+
+                html += `
+                    <div class="restaurant-card">
+                        <div class="order-badge">#${item.order}</div>
+                        <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+                             alt="${restaurant.name}"
+                             class="restaurant-image"
+                             onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                        <div class="restaurant-info">
+                            <h3 class="restaurant-name">${restaurant.name}</h3>
+                            <div>
+                                <span class="restaurant-category">${restaurant.category}</span>
+                                <span class="restaurant-cuisine">${restaurant.cuisineType}</span>
+                            </div>
+                            <p class="restaurant-address">📍 ${restaurant.address}</p>
+                            ${restaurant.rating ? `<div class="restaurant-rating">${ratingStars} ${restaurant.rating}/5</div>` : ''}
+                            ${item.description ? `<p class="guide-restaurant-note">"${item.description}"</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        html += '</div>';
+        resultsSection.innerHTML = html;
+    } catch (error) {
+        resultsSection.innerHTML = '<div class="error-message">Failed to load guide</div>';
+        console.error('Error loading guide:', error);
+    }
+}
+
+function showCreateGuideModal() {
+    if (!authService.isAuthenticated()) {
+        showModal('loginModal');
+        return;
+    }
+
+    const resultsSection = document.querySelector('.results-section');
+    const html = `
+        <div class="create-guide-modal">
+            <h2>Create Neighborhood Guide</h2>
+            <div class="form-group">
+                <label>Guide Title</label>
+                <input type="text" id="guideTitle" class="form-control" placeholder="e.g., Best of Little Italy">
+            </div>
+            <div class="form-group">
+                <label>Neighborhood Name</label>
+                <input type="text" id="guideNeighborhood" class="form-control" placeholder="e.g., Little Italy">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="guideDescription" class="form-control" rows="4" placeholder="Describe what makes this guide special..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Image URL (optional)</label>
+                <input type="text" id="guideImageUrl" class="form-control" placeholder="https://...">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="navigateTo('guides')">Cancel</button>
+                <button class="btn btn-primary" onclick="createGuide()">Create Guide</button>
+            </div>
+        </div>
+    `;
+    resultsSection.innerHTML = html;
+}
+
+async function createGuide() {
+    const title = document.getElementById('guideTitle').value.trim();
+    const neighborhood = document.getElementById('guideNeighborhood').value.trim();
+    const description = document.getElementById('guideDescription').value.trim();
+    const imageUrl = document.getElementById('guideImageUrl').value.trim() || null;
+
+    if (!title || !neighborhood || !description) {
+        showError('Please fill in all required fields');
+        return;
+    }
+
+    try {
+        const guide = await guidesService.createGuide(title, description, neighborhood, imageUrl);
+        showSuccess('Guide created successfully!');
+        setTimeout(() => viewGuide(guide.id), 1000);
+    } catch (error) {
+        showError('Failed to create guide');
+        console.error('Error creating guide:', error);
+    }
+}
+
+async function deleteGuide(guideId) {
+    if (!confirm('Are you sure you want to delete this guide?')) return;
+
+    try {
+        await guidesService.deleteGuide(guideId);
+        showSuccess('Guide deleted successfully!');
+        navigateTo('guides');
+    } catch (error) {
+        showError('Failed to delete guide');
+        console.error('Error deleting guide:', error);
+    }
+}
+
+// =============================================================================
+// Route Planning Page Functions
+// =============================================================================
+
+async function showRoutesPage() {
+    const resultsSection = document.querySelector('.results-section');
+    resultsSection.innerHTML = '<div class="page-loading">Loading routes...</div>';
+
+    try {
+        const routes = await routesService.getMyRoutes();
+
+        let html = `
+            <div class="routes-page">
+                <div class="page-header">
+                    <h2>🗺️ My Routes</h2>
+                    <p class="subheader">Plan multi-restaurant food tours</p>
+                </div>
+                <button class="btn btn-primary" onclick="showCreateRouteModal()">Create New Route</button>
+        `;
+
+        if (routes.length === 0) {
+            html += `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🗺️</div>
+                    <div class="empty-state-text">No routes yet</div>
+                    <div class="empty-state-subtext">Create your first food tour route!</div>
+                </div>
+            `;
+        } else {
+            html += '<div class="routes-grid">';
+            routes.forEach(route => {
+                html += `
+                    <div class="route-card" onclick="viewRoute(${route.id})">
+                        <h3>${route.name}</h3>
+                        <p class="route-meta">${route.stopCount} stop${route.stopCount !== 1 ? 's' : ''}</p>
+                        ${route.isOptimized ? '<span class="badge badge-success">Optimized</span>' : '<span class="badge">Not optimized</span>'}
+                        <p class="route-date">Created ${new Date(route.createdAt).toLocaleDateString()}</p>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        html += '</div>';
+        resultsSection.innerHTML = html;
+    } catch (error) {
+        resultsSection.innerHTML = '<div class="error-message">Failed to load routes</div>';
+        console.error('Error loading routes:', error);
+    }
+}
+
+async function viewRoute(routeId) {
+    const resultsSection = document.querySelector('.results-section');
+    resultsSection.innerHTML = '<div class="page-loading">Loading route...</div>';
+
+    try {
+        const [route, stops] = await Promise.all([
+            routesService.getRoute(routeId),
+            routesService.getRouteStops(routeId)
+        ]);
+
+        let html = `
+            <div class="route-detail-page">
+                <button class="btn btn-secondary" onclick="navigateTo('routes')">← Back to Routes</button>
+                <div class="route-detail-header">
+                    <h2>${route.name}</h2>
+                    <div class="route-actions">
+                        ${stops.length >= 2 ? `<button class="btn btn-primary" onclick="optimizeRoute(${route.id})">Optimize Route</button>` : ''}
+                        <button class="btn btn-secondary" onclick="showAddStopModal(${route.id})">Add Stop</button>
+                        <button class="btn btn-danger" onclick="deleteRoute(${route.id})">Delete Route</button>
+                    </div>
+                    ${route.isOptimized ? '<span class="badge badge-success">Route Optimized</span>' : ''}
+                </div>
+                <h3>Stops (${stops.length})</h3>
+        `;
+
+        if (stops.length === 0) {
+            html += `
+                <div class="empty-state">
+                    <div class="empty-state-text">No stops in this route yet</div>
+                    <button class="btn btn-primary" onclick="showAddStopModal(${route.id})">Add First Stop</button>
+                </div>
+            `;
+        } else {
+            html += '<div class="route-stops">';
+            stops.forEach(stop => {
+                const restaurant = stop.restaurant;
+                const ratingStars = restaurant.rating ? '⭐'.repeat(Math.round(restaurant.rating)) : '';
+
+                html += `
+                    <div class="restaurant-card">
+                        <div class="order-badge">Stop #${stop.order}</div>
+                        <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+                             alt="${restaurant.name}"
+                             class="restaurant-image"
+                             onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                        <div class="restaurant-info">
+                            <h3 class="restaurant-name">${restaurant.name}</h3>
+                            <div>
+                                <span class="restaurant-category">${restaurant.category}</span>
+                                <span class="restaurant-cuisine">${restaurant.cuisineType}</span>
+                            </div>
+                            <p class="restaurant-address">📍 ${restaurant.address}</p>
+                            ${restaurant.rating ? `<div class="restaurant-rating">${ratingStars} ${restaurant.rating}/5</div>` : ''}
+                            ${stop.notes ? `<p class="route-stop-note">📝 ${stop.notes}</p>` : ''}
+                            <button class="btn btn-small btn-danger" onclick="removeStop(${route.id}, ${stop.id})">Remove</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        html += '</div>';
+        resultsSection.innerHTML = html;
+    } catch (error) {
+        resultsSection.innerHTML = '<div class="error-message">Failed to load route</div>';
+        console.error('Error loading route:', error);
+    }
+}
+
+function showCreateRouteModal() {
+    const resultsSection = document.querySelector('.results-section');
+    const html = `
+        <div class="create-route-modal">
+            <h2>Create New Route</h2>
+            <div class="form-group">
+                <label>Route Name</label>
+                <input type="text" id="routeName" class="form-control" placeholder="e.g., Downtown Food Tour">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="navigateTo('routes')">Cancel</button>
+                <button class="btn btn-primary" onclick="createRoute()">Create Route</button>
+            </div>
+        </div>
+    `;
+    resultsSection.innerHTML = html;
+}
+
+async function createRoute() {
+    const name = document.getElementById('routeName').value.trim();
+
+    if (!name) {
+        showError('Please enter a route name');
+        return;
+    }
+
+    try {
+        const route = await routesService.createRoute(name);
+        showSuccess('Route created successfully!');
+        setTimeout(() => viewRoute(route.id), 1000);
+    } catch (error) {
+        showError('Failed to create route');
+        console.error('Error creating route:', error);
+    }
+}
+
+async function deleteRoute(routeId) {
+    if (!confirm('Are you sure you want to delete this route?')) return;
+
+    try {
+        await routesService.deleteRoute(routeId);
+        showSuccess('Route deleted successfully!');
+        navigateTo('routes');
+    } catch (error) {
+        showError('Failed to delete route');
+        console.error('Error deleting route:', error);
+    }
+}
+
+async function optimizeRoute(routeId) {
+    try {
+        await routesService.optimizeRoute(routeId);
+        showSuccess('Route optimized!');
+        setTimeout(() => viewRoute(routeId), 500);
+    } catch (error) {
+        showError(error.message || 'Failed to optimize route');
+        console.error('Error optimizing route:', error);
+    }
+}
+
+async function showAddStopModal(routeId) {
+    const resultsSection = document.querySelector('.results-section');
+    resultsSection.innerHTML = '<div class="page-loading">Loading restaurants...</div>';
+
+    try {
+        const restaurants = await fetch('/api/restaurants').then(r => r.json());
+
+        let html = `
+            <div class="add-stop-modal">
+                <h2>Add Stop to Route</h2>
+                <p>Select a restaurant to add to your route:</p>
+                <div class="restaurant-list">
+        `;
+
+        restaurants.forEach(restaurant => {
+            html += `
+                <div class="restaurant-card" style="cursor: pointer;" onclick="addStopToRoute(${routeId}, ${restaurant.id})">
+                    <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+                         alt="${restaurant.name}"
+                         class="restaurant-image"
+                         onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                    <div class="restaurant-info">
+                        <h3 class="restaurant-name">${restaurant.name}</h3>
+                        <span class="restaurant-category">${restaurant.category}</span>
+                        <p class="restaurant-address">📍 ${restaurant.address}</p>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+                <button class="btn btn-secondary" onclick="viewRoute(${routeId})">Cancel</button>
+            </div>
+        `;
+        resultsSection.innerHTML = html;
+    } catch (error) {
+        showError('Failed to load restaurants');
+        console.error('Error loading restaurants:', error);
+    }
+}
+
+async function addStopToRoute(routeId, restaurantId) {
+    try {
+        await routesService.addStop(routeId, restaurantId);
+        showSuccess('Stop added to route!');
+        setTimeout(() => viewRoute(routeId), 500);
+    } catch (error) {
+        showError(error.message || 'Failed to add stop. It may already be in the route.');
+        console.error('Error adding stop:', error);
+    }
+}
+
+async function removeStop(routeId, stopId) {
+    if (!confirm('Remove this stop from the route?')) return;
+
+    try {
+        await routesService.removeStop(routeId, stopId);
+        showSuccess('Stop removed!');
+        setTimeout(() => viewRoute(routeId), 500);
+    } catch (error) {
+        showError('Failed to remove stop');
+        console.error('Error removing stop:', error);
     }
 }
 

@@ -894,6 +894,241 @@ footer {
 }
 
 /* =============================================================================
+   Neighborhood Guides Styles
+   ============================================================================= */
+
+.guides-page,
+.guide-detail-page {
+    padding: 2rem 0;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.page-header h2 {
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+}
+
+.subheader {
+    color: var(--gray-color);
+    font-size: 1.1rem;
+}
+
+.guides-grid,
+.routes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.guide-card,
+.route-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+}
+
+.guide-card:hover,
+.route-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.guide-image,
+.guide-image-placeholder {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+}
+
+.guide-content,
+.route-card {
+    padding: 1.5rem;
+}
+
+.guide-card h3,
+.route-card h3 {
+    margin-bottom: 0.5rem;
+    color: var(--dark-color);
+}
+
+.guide-neighborhood {
+    color: var(--secondary-color);
+    font-weight: 500;
+    margin: 0.5rem 0;
+}
+
+.guide-description {
+    color: var(--gray-color);
+    margin: 1rem 0;
+    line-height: 1.6;
+}
+
+.guide-meta,
+.route-meta {
+    color: var(--gray-color);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-left: 0.5rem;
+    background-color: var(--gray-color);
+    color: white;
+}
+
+.badge-official {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.badge-success {
+    background-color: var(--success-color);
+}
+
+.guide-detail-header,
+.route-detail-header {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+
+.guide-detail-image {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+.guide-restaurants,
+.route-stops {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.order-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: var(--primary-color);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 1.2rem;
+    box-shadow: var(--shadow);
+}
+
+.guide-restaurant-note,
+.route-stop-note {
+    font-style: italic;
+    color: var(--gray-color);
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background-color: var(--light-color);
+    border-left: 3px solid var(--secondary-color);
+}
+
+.route-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.route-date {
+    color: var(--gray-color);
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+/* Create forms */
+.create-guide-modal,
+.create-route-modal,
+.add-stop-modal {
+    max-width: 600px;
+    margin: 2rem auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+}
+
+.create-guide-modal h2,
+.create-route-modal h2,
+.add-stop-modal h2 {
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--dark-color);
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e9ecef;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.3s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+/* =============================================================================
    Responsive Updates
    ============================================================================= */
 
@@ -911,12 +1146,22 @@ footer {
         justify-content: center;
     }
 
-    .lists-grid {
+    .lists-grid,
+    .guides-grid,
+    .routes-grid {
         grid-template-columns: 1fr;
     }
 
     .lists-header {
         flex-direction: column;
         text-align: center;
+    }
+
+    .route-actions {
+        flex-direction: column;
+    }
+
+    .form-actions {
+        flex-direction: column;
     }
 }
