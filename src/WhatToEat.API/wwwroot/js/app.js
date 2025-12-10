@@ -375,11 +375,11 @@ function createRestaurantCard(restaurant) {
             ${restaurant.phone ? `<p class="restaurant-phone">📞 ${restaurant.phone}</p>` : ''}
             ${distanceHtml}
             <div class="restaurant-actions">
+                ${favoriteButtonHtml}
+                ${watchlistButtonHtml}
                 <button class="btn btn-small btn-directions" onclick="openDirections(${restaurant.latitude}, ${restaurant.longitude}, '${escapedName}')">
                     🧭 Get Directions
                 </button>
-                ${watchlistButtonHtml}
-                ${favoriteButtonHtml}
             </div>
         </div>
     `;

@@ -321,12 +321,18 @@ main {
 .btn-directions {
     background-color: var(--secondary-color);
     color: white;
-    flex: 1;
+    flex: 1 1 100%;
     min-width: 140px;
 }
 
 .btn-directions:hover {
     background-color: #45b8b0;
+}
+
+.btn-favorite,
+.btn-watchlist {
+    flex: 1;
+    min-width: 120px;
 }
 
 /* Map View */
