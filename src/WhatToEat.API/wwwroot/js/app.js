@@ -221,6 +221,7 @@ async function loadRestaurants(searchParams = {}) {
         if (searchParams.query) params.append('query', searchParams.query);
         if (searchParams.category) params.append('category', searchParams.category);
         if (searchParams.cuisineType) params.append('cuisineType', searchParams.cuisineType);
+        if (searchParams.province) params.append('province', searchParams.province);
 
         if (params.toString()) {
             url = `${API_BASE_URL}/restaurants/search?${params.toString()}`;
