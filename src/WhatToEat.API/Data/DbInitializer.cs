@@ -22,15 +22,16 @@ public static class DbInitializer
 
         var restaurants = new Restaurant[]
         {
-            // Pizza restaurants
+            // Pizza restaurants - Toronto
             new Restaurant
             {
                 Name = "Pizza Palace",
                 Category = "Pizza",
                 CuisineType = "Italian",
-                Address = "123 Main St, Downtown",
-                Latitude = 40.7128,
-                Longitude = -74.0060,
+                Address = "123 Main St, Downtown Toronto",
+                Province = "ON",
+                Latitude = 43.6532,
+                Longitude = -79.3832,
                 Phone = "+1-555-0101",
                 Rating = 4.5m,
                 Description = "Authentic Italian pizza with wood-fired oven",
@@ -41,23 +42,25 @@ public static class DbInitializer
                 Name = "Slice of Heaven",
                 Category = "Pizza",
                 CuisineType = "Italian",
-                Address = "456 Oak Ave, Midtown",
-                Latitude = 40.7580,
-                Longitude = -73.9855,
+                Address = "456 Oak Ave, Midtown Toronto",
+                Province = "ON",
+                Latitude = 43.6629,
+                Longitude = -79.3957,
                 Phone = "+1-555-0102",
                 Rating = 4.7m,
                 Description = "New York style pizza and Italian specialties",
                 ImageUrl = "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38"
             },
-            // Burger restaurants
+            // Burger restaurants - Vancouver
             new Restaurant
             {
                 Name = "Burger Barn",
                 Category = "Burgers",
                 CuisineType = "American",
-                Address = "789 Elm St, Uptown",
-                Latitude = 40.7489,
-                Longitude = -73.9680,
+                Address = "789 Elm St, Vancouver",
+                Province = "BC",
+                Latitude = 49.2827,
+                Longitude = -123.1207,
                 Phone = "+1-555-0103",
                 Rating = 4.3m,
                 Description = "Gourmet burgers with fresh ingredients",
@@ -68,23 +71,25 @@ public static class DbInitializer
                 Name = "The Burger Joint",
                 Category = "Burgers",
                 CuisineType = "American",
-                Address = "321 Pine Rd, West Side",
-                Latitude = 40.7614,
-                Longitude = -73.9776,
+                Address = "321 Pine Rd, Vancouver",
+                Province = "BC",
+                Latitude = 49.2845,
+                Longitude = -123.1090,
                 Phone = "+1-555-0104",
                 Rating = 4.6m,
                 Description = "Classic American burgers and fries",
                 ImageUrl = "https://images.unsplash.com/photo-1550547660-d9450f859349"
             },
-            // Sushi restaurants
+            // Sushi restaurants - Toronto
             new Restaurant
             {
                 Name = "Sushi Master",
                 Category = "Sushi",
                 CuisineType = "Japanese",
-                Address = "555 Cherry Ln, East Side",
-                Latitude = 40.7282,
-                Longitude = -73.9942,
+                Address = "555 Cherry Ln, Toronto",
+                Province = "ON",
+                Latitude = 43.6426,
+                Longitude = -79.3871,
                 Phone = "+1-555-0105",
                 Rating = 4.8m,
                 Description = "Fresh sushi and traditional Japanese cuisine",
@@ -95,23 +100,25 @@ public static class DbInitializer
                 Name = "Tokyo Sushi Bar",
                 Category = "Sushi",
                 CuisineType = "Japanese",
-                Address = "888 Maple Dr, South Side",
-                Latitude = 40.7061,
-                Longitude = -74.0087,
+                Address = "888 Maple Dr, Toronto",
+                Province = "ON",
+                Latitude = 43.6511,
+                Longitude = -79.3470,
                 Phone = "+1-555-0106",
                 Rating = 4.4m,
                 Description = "Authentic Japanese sushi and sake bar",
                 ImageUrl = "https://images.unsplash.com/photo-1580822184713-fc5400e7fe10"
             },
-            // Mexican restaurants
+            // Mexican restaurants - Vancouver
             new Restaurant
             {
                 Name = "Taco Fiesta",
                 Category = "Tacos",
                 CuisineType = "Mexican",
-                Address = "999 Cedar Blvd, North Side",
-                Latitude = 40.7831,
-                Longitude = -73.9712,
+                Address = "999 Cedar Blvd, Vancouver",
+                Province = "BC",
+                Latitude = 49.2665,
+                Longitude = -123.1419,
                 Phone = "+1-555-0107",
                 Rating = 4.2m,
                 Description = "Authentic Mexican tacos and burritos",
@@ -122,23 +129,25 @@ public static class DbInitializer
                 Name = "La Cantina",
                 Category = "Mexican",
                 CuisineType = "Mexican",
-                Address = "777 Birch Way, Central",
-                Latitude = 40.7359,
-                Longitude = -73.9911,
+                Address = "777 Birch Way, Vancouver",
+                Province = "BC",
+                Latitude = 49.2750,
+                Longitude = -123.1020,
                 Phone = "+1-555-0108",
                 Rating = 4.5m,
                 Description = "Traditional Mexican food and margaritas",
                 ImageUrl = "https://images.unsplash.com/photo-1613514785940-daed07799d9b"
             },
-            // Asian restaurants
+            // Asian restaurants - Toronto
             new Restaurant
             {
                 Name = "Dragon Wok",
                 Category = "Chinese",
                 CuisineType = "Chinese",
-                Address = "111 Willow St, Chinatown",
-                Latitude = 40.7158,
-                Longitude = -73.9970,
+                Address = "111 Willow St, Chinatown Toronto",
+                Province = "ON",
+                Latitude = 43.6529,
+                Longitude = -79.3988,
                 Phone = "+1-555-0109",
                 Rating = 4.3m,
                 Description = "Szechuan and Cantonese cuisine",
@@ -149,79 +158,85 @@ public static class DbInitializer
                 Name = "Thai Spice",
                 Category = "Thai",
                 CuisineType = "Thai",
-                Address = "222 Bamboo Ave, Asia District",
-                Latitude = 40.7223,
-                Longitude = -73.9873,
+                Address = "222 Bamboo Ave, Toronto",
+                Province = "ON",
+                Latitude = 43.6555,
+                Longitude = -79.3626,
                 Phone = "+1-555-0110",
                 Rating = 4.6m,
                 Description = "Authentic Thai curries and pad thai",
                 ImageUrl = "https://images.unsplash.com/photo-1559314809-0d155014e29e"
             },
-            // Pasta/Italian restaurants
+            // Pasta/Italian restaurants - Vancouver
             new Restaurant
             {
                 Name = "Pasta Paradise",
                 Category = "Pasta",
                 CuisineType = "Italian",
-                Address = "333 Rome St, Little Italy",
-                Latitude = 40.7193,
-                Longitude = -73.9969,
+                Address = "333 Rome St, Vancouver",
+                Province = "BC",
+                Latitude = 49.2805,
+                Longitude = -123.1089,
                 Phone = "+1-555-0111",
                 Rating = 4.7m,
                 Description = "Homemade pasta and Italian wines",
                 ImageUrl = "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9"
             },
-            // Steakhouse
+            // Steakhouse - Vancouver
             new Restaurant
             {
                 Name = "The Steakhouse",
                 Category = "Steak",
                 CuisineType = "American",
-                Address = "444 Beef Blvd, Business District",
-                Latitude = 40.7549,
-                Longitude = -73.9840,
+                Address = "444 Beef Blvd, Vancouver",
+                Province = "BC",
+                Latitude = 49.2893,
+                Longitude = -123.1118,
                 Phone = "+1-555-0112",
                 Rating = 4.8m,
                 Description = "Premium steaks and fine dining",
                 ImageUrl = "https://images.unsplash.com/photo-1600891964092-4316c288032e"
             },
-            // Indian
+            // Indian - Toronto
             new Restaurant
             {
                 Name = "Curry House",
                 Category = "Indian",
                 CuisineType = "Indian",
-                Address = "666 Spice Rd, India Town",
-                Latitude = 40.7475,
-                Longitude = -73.9925,
+                Address = "666 Spice Rd, Toronto",
+                Province = "ON",
+                Latitude = 43.6708,
+                Longitude = -79.3899,
                 Phone = "+1-555-0113",
                 Rating = 4.4m,
                 Description = "Traditional Indian curries and tandoori",
                 ImageUrl = "https://images.unsplash.com/photo-1585937421612-70a008356fbe"
             },
-            // Seafood
+            // Seafood - Vancouver
             new Restaurant
             {
                 Name = "Ocean's Catch",
                 Category = "Seafood",
                 CuisineType = "Seafood",
-                Address = "555 Harbor Dr, Waterfront",
-                Latitude = 40.7033,
-                Longitude = -74.0170,
+                Address = "555 Harbor Dr, Vancouver Waterfront",
+                Province = "BC",
+                Latitude = 49.2877,
+                Longitude = -123.1190,
                 Phone = "+1-555-0114",
                 Rating = 4.5m,
                 Description = "Fresh seafood and oyster bar",
                 ImageUrl = "https://images.unsplash.com/photo-1559339352-11d035aa65de"
             },
-            // Breakfast/Brunch
+            // Breakfast/Brunch - Toronto
             new Restaurant
             {
                 Name = "Morning Glory Cafe",
                 Category = "Breakfast",
                 CuisineType = "American",
-                Address = "777 Sunrise Ave, Greenwich",
-                Latitude = 40.7359,
-                Longitude = -74.0036,
+                Address = "777 Sunrise Ave, Toronto",
+                Province = "ON",
+                Latitude = 43.6615,
+                Longitude = -79.3790,
                 Phone = "+1-555-0115",
                 Rating = 4.6m,
                 Description = "All-day breakfast and brunch favorites",

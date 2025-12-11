@@ -50,7 +50,8 @@ public class RestaurantsController : ControllerBase
     public async Task<ActionResult<IEnumerable<Restaurant>>> SearchRestaurants(
         [FromQuery] string? query,
         [FromQuery] string? category,
-        [FromQuery] string? cuisineType)
+        [FromQuery] string? cuisineType,
+        [FromQuery] string? province)
     {
         var restaurantsQuery = _context.Restaurants.AsQueryable();
 
@@ -76,6 +77,12 @@ public class RestaurantsController : ControllerBase
                 r.CuisineType.ToLower().Contains(cuisineType.ToLower()));
         }
 
+        if (!string.IsNullOrWhiteSpace(province))
+        {
+            restaurantsQuery = restaurantsQuery.Where(r =>
+                r.Province.ToLower() == province.ToLower());
+        }
+
         var restaurants = await restaurantsQuery.ToListAsync();
         return restaurants;
     }
@@ -88,9 +95,18 @@ public class RestaurantsController : ControllerBase
         [FromQuery] double latitude,
         [FromQuery] double longitude,
         [FromQuery] double radiusKm = 5.0,
-        [FromQuery] string? category = null)
+        [FromQuery] string? category = null,
+        [FromQuery] string? province = null)
     {
-        var allRestaurants = await _context.Restaurants.ToListAsync();
+        var query = _context.Restaurants.AsQueryable();
+
+        // Filter by province if specified
+        if (!string.IsNullOrWhiteSpace(province))
+        {
+            query = query.Where(r => r.Province.ToLower() == province.ToLower());
+        }
+
+        var allRestaurants = await query.ToListAsync();
 
         // Filter by category if specified
         if (!string.IsNullOrWhiteSpace(category))
@@ -143,6 +159,21 @@ public class RestaurantsController : ControllerBase
             .ToListAsync();
 
         return cuisineTypes;
+    }
+
+    /// <summary>
+    /// Get unique provinces
+    /// </summary>
+    [HttpGet("provinces")]
+    public async Task<ActionResult<IEnumerable<string>>> GetProvinces()
+    {
+        var provinces = await _context.Restaurants
+            .Select(r => r.Province)
+            .Distinct()
+            .OrderBy(p => p)
+            .ToListAsync();
+
+        return provinces;
     }
 
     /// <summary>
@@ -245,7 +276,8 @@ public class RestaurantsController : ControllerBase
         [FromQuery] double? radiusKm,
         [FromQuery] string? category,
         [FromQuery] string? cuisineType,
-        [FromQuery] decimal? minRating)
+        [FromQuery] decimal? minRating,
+        [FromQuery] string? province)
     {
         var query = _context.Restaurants.AsQueryable();
 
@@ -263,6 +295,11 @@ public class RestaurantsController : ControllerBase
         if (minRating.HasValue)
         {
             query = query.Where(r => r.Rating >= minRating.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(province))
+        {
+            query = query.Where(r => r.Province.ToLower() == province.ToLower());
         }
 
         var restaurants = await query.ToListAsync();
