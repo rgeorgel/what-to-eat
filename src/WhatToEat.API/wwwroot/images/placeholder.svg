@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e9ecef;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#dee2e6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#bg)"/>
+
+  <!-- Fork and Knife Icon -->
+  <g transform="translate(160, 80)">
+    <!-- Fork -->
+    <path d="M10,0 L10,40 M10,40 Q10,50 15,50 L15,80 M5,0 L5,35 Q5,40 10,40 M15,0 L15,35 Q15,40 10,40"
+          stroke="#adb5bd" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+    <!-- Knife -->
+    <path d="M55,0 L55,80 M50,0 L60,0 L60,20 Q60,30 55,30"
+          stroke="#adb5bd" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Text -->
+  <text x="200" y="210" font-family="Arial, sans-serif" font-size="18" fill="#6c757d"
+        text-anchor="middle" font-weight="500">No Image Available</text>
+</svg>
