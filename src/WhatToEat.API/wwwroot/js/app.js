@@ -1289,7 +1289,10 @@ async function viewGuide(guideId) {
                     <p class="guide-neighborhood">📍 ${guide.neighborhoodName}</p>
                     <p class="guide-description">${guide.description}</p>
                     <p class="guide-meta">Created by ${guide.userDisplayName}</p>
-                    ${isOwner ? `<button class="btn btn-danger" onclick="deleteGuide(${guide.id})">Delete Guide</button>` : ''}
+                    ${isOwner ? `
+                        <button class="btn btn-secondary" onclick="showAddRestaurantToGuideModal(${guide.id})">Add Restaurant</button>
+                        <button class="btn btn-danger" onclick="deleteGuide(${guide.id})">Delete Guide</button>
+                    ` : ''}
                 </div>
                 <h3>Restaurants in this Guide</h3>
         `;
@@ -1298,6 +1301,7 @@ async function viewGuide(guideId) {
             html += `
                 <div class="empty-state">
                     <div class="empty-state-text">No restaurants in this guide yet</div>
+                    ${isOwner ? `<button class="btn btn-primary" onclick="showAddRestaurantToGuideModal(${guide.id})">Add First Restaurant</button>` : ''}
                 </div>
             `;
         } else {
@@ -1322,6 +1326,7 @@ async function viewGuide(guideId) {
                             <p class="restaurant-address">📍 ${restaurant.address}</p>
                             ${restaurant.rating ? `<div class="restaurant-rating">${ratingStars} ${restaurant.rating}/5</div>` : ''}
                             ${item.description ? `<p class="guide-restaurant-note">"${item.description}"</p>` : ''}
+                            ${isOwner ? `<button class="btn btn-small btn-danger" onclick="removeRestaurantFromGuide(${guide.id}, ${restaurant.id})">Remove</button>` : ''}
                         </div>
                     </div>
                 `;
@@ -1403,6 +1408,76 @@ async function deleteGuide(guideId) {
     } catch (error) {
         showError('Failed to delete guide');
         console.error('Error deleting guide:', error);
+    }
+}
+
+async function showAddRestaurantToGuideModal(guideId) {
+    const resultsSection = document.querySelector('.results-section');
+    resultsSection.innerHTML = '<div class="page-loading">Loading restaurants...</div>';
+
+    try {
+        const restaurants = await fetch('/api/restaurants').then(r => r.json());
+
+        let html = `
+            <div class="add-restaurant-modal">
+                <h2>Add Restaurant to Guide</h2>
+                <p>Select a restaurant to add to your guide:</p>
+                <div class="restaurant-list">
+        `;
+
+        restaurants.forEach(restaurant => {
+            html += `
+                <div class="restaurant-card" style="cursor: pointer;" onclick="addRestaurantToGuide(${guideId}, ${restaurant.id})">
+                    <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+                         alt="${restaurant.name}"
+                         class="restaurant-image"
+                         onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                    <div class="restaurant-info">
+                        <h3 class="restaurant-name">${restaurant.name}</h3>
+                        <span class="restaurant-category">${restaurant.category}</span>
+                        <p class="restaurant-address">📍 ${restaurant.address}</p>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+                <button class="btn btn-secondary" onclick="viewGuide(${guideId})">Cancel</button>
+            </div>
+        `;
+        resultsSection.innerHTML = html;
+    } catch (error) {
+        showError('Failed to load restaurants');
+        console.error('Error loading restaurants:', error);
+    }
+}
+
+async function addRestaurantToGuide(guideId, restaurantId) {
+    try {
+        // Get current restaurants to determine next order number
+        const existingRestaurants = await guidesService.getGuideRestaurants(guideId);
+        const nextOrder = existingRestaurants.length + 1;
+
+        await guidesService.addRestaurantToGuide(guideId, restaurantId, nextOrder);
+        showSuccess('Restaurant added to guide!');
+        setTimeout(() => viewGuide(guideId), 500);
+    } catch (error) {
+        showError(error.message || 'Failed to add restaurant. It may already be in the guide.');
+        console.error('Error adding restaurant:', error);
+    }
+}
+
+async function removeRestaurantFromGuide(guideId, restaurantId) {
+    if (!confirm('Remove this restaurant from the guide?')) return;
+
+    try {
+        await guidesService.removeRestaurantFromGuide(guideId, restaurantId);
+        showSuccess('Restaurant removed!');
+        setTimeout(() => viewGuide(guideId), 500);
+    } catch (error) {
+        showError('Failed to remove restaurant');
+        console.error('Error removing restaurant:', error);
     }
 }
 
