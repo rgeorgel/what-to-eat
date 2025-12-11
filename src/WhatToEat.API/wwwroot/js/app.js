@@ -9,6 +9,19 @@ let allRestaurants = [];
 let currentPage = 'home';
 let selectedRestaurantForFavorite = null;
 
+// City preference functions
+function saveCityPreference(province) {
+    if (province) {
+        localStorage.setItem('preferredCity', province);
+    } else {
+        localStorage.removeItem('preferredCity');
+    }
+}
+
+function loadCityPreference() {
+    return localStorage.getItem('preferredCity') || '';
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
@@ -26,6 +39,16 @@ async function initializeApp() {
 
     // Load filter options
     await loadFilterOptions();
+
+    // Load and apply saved city preference
+    const savedCity = loadCityPreference();
+    if (savedCity) {
+        document.getElementById('cityFilter').value = savedCity;
+        const randomCityFilter = document.getElementById('randomCityFilter');
+        if (randomCityFilter) {
+            randomCityFilter.value = savedCity;
+        }
+    }
 
     // Load all restaurants initially - only if not on a share page
     if (!window.location.hash.startsWith('#/share/')) {
@@ -57,6 +80,10 @@ function setupEventListeners() {
     document.getElementById('mapViewBtn').addEventListener('click', () => toggleView('map'));
 
     // Filters
+    document.getElementById('cityFilter').addEventListener('change', (e) => {
+        saveCityPreference(e.target.value);
+        handleSearch();
+    });
     document.getElementById('categoryFilter').addEventListener('change', handleSearch);
     document.getElementById('cuisineFilter').addEventListener('change', handleSearch);
 
@@ -216,7 +243,7 @@ async function loadRestaurants(searchParams = {}) {
     }
 }
 
-async function loadNearbyRestaurants(latitude, longitude, radius, category = '') {
+async function loadNearbyRestaurants(latitude, longitude, radius, category = '', province = '') {
     showLoading(true);
     hideError();
 
@@ -229,6 +256,10 @@ async function loadNearbyRestaurants(latitude, longitude, radius, category = '')
 
         if (category) {
             params.append('category', category);
+        }
+
+        if (province) {
+            params.append('province', province);
         }
 
         const response = await fetch(`${API_BASE_URL}/restaurants/nearby?${params.toString()}`);
@@ -262,11 +293,13 @@ function handleSearch() {
     const query = document.getElementById('searchInput').value.trim();
     const category = document.getElementById('categoryFilter').value;
     const cuisineType = document.getElementById('cuisineFilter').value;
+    const province = document.getElementById('cityFilter').value;
 
     const searchParams = {};
     if (query) searchParams.query = query;
     if (category) searchParams.category = category;
     if (cuisineType) searchParams.cuisineType = cuisineType;
+    if (province) searchParams.province = province;
 
     loadRestaurants(searchParams);
 }
@@ -287,12 +320,14 @@ function handleNearMe() {
 
             const radius = parseFloat(document.getElementById('radiusFilter').value);
             const category = document.getElementById('categoryFilter').value;
+            const province = document.getElementById('cityFilter').value;
 
             loadNearbyRestaurants(
                 userLocation.lat,
                 userLocation.lng,
                 radius,
-                category
+                category,
+                province
             );
         },
         (error) => {
@@ -674,6 +709,7 @@ async function handlePickRandom() {
     const cuisineType = document.getElementById('randomCuisineFilter').value;
     const minRating = document.getElementById('minRatingFilter').value;
     const radiusKm = document.getElementById('randomRadiusFilter').value;
+    const province = document.getElementById('randomCityFilter').value;
 
     const errorEl = document.getElementById('randomError');
     errorEl.classList.add('hidden');
@@ -684,6 +720,7 @@ async function handlePickRandom() {
         if (category) params.append('category', category);
         if (cuisineType) params.append('cuisineType', cuisineType);
         if (minRating) params.append('minRating', minRating);
+        if (province) params.append('province', province);
 
         if (useLocation) {
             if (!navigator.geolocation) {

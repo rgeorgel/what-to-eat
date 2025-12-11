@@ -468,6 +468,11 @@ namespace WhatToEat.API.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("Province")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
                     b.Property<decimal?>("Rating")
                         .HasColumnType("decimal(3,2)");
 
@@ -478,6 +483,8 @@ namespace WhatToEat.API.Migrations
                     b.HasIndex("CuisineType");
 
                     b.HasIndex("Latitude", "Longitude");
+
+                    b.HasIndex("Province");
 
                     b.ToTable("Restaurants");
                 });

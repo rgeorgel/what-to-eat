@@ -50,6 +50,13 @@
             </div>
 
             <div class="filters">
+                <label for="cityFilter">City:</label>
+                <select id="cityFilter">
+                    <option value="">All Cities</option>
+                    <option value="ON">Toronto</option>
+                    <option value="BC">Vancouver</option>
+                </select>
+
                 <label for="categoryFilter">Category:</label>
                 <select id="categoryFilter">
                     <option value="">All Categories</option>
@@ -220,6 +227,14 @@
                         <option value="5" selected>5 km</option>
                         <option value="10">10 km</option>
                         <option value="20">20 km</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="randomCityFilter">City (optional):</label>
+                    <select id="randomCityFilter">
+                        <option value="">Any City</option>
+                        <option value="ON">Toronto</option>
+                        <option value="BC">Vancouver</option>
                     </select>
                 </div>
                 <div class="form-group">
