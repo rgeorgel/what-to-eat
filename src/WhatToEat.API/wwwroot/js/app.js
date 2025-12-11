@@ -396,11 +396,11 @@ function createRestaurantCard(restaurant) {
     const escapedName = restaurant.name.replace(/'/g, "\\'");
 
     card.innerHTML = `
-        <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+        <img src="${restaurant.imageUrl || '/images/placeholder.svg'}"
              alt="${restaurant.name}"
              class="restaurant-image"
              loading="lazy"
-             onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
+             onerror="this.onerror=null; this.src='/images/placeholder.svg'">
         <div class="restaurant-info">
             <h3 class="restaurant-name">${restaurant.name}</h3>
             <div>
@@ -771,9 +771,9 @@ function displayRandomRestaurant(restaurant) {
 
     detailsContainer.innerHTML = `
         <div class="random-restaurant-image">
-            <img src="${restaurant.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image'}"
+            <img src="${restaurant.imageUrl || '/images/placeholder.svg'}"
                  alt="${restaurant.name}"
-                 onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=No+Image'">
+                 onerror="this.onerror=null; this.src='/images/placeholder.svg'">
         </div>
         <h3>${restaurant.name}</h3>
         <div>
@@ -1353,10 +1353,10 @@ async function viewGuide(guideId) {
                 html += `
                     <div class="restaurant-card">
                         <div class="order-badge">#${item.order}</div>
-                        <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+                        <img src="${restaurant.imageUrl || '/images/placeholder.svg'}"
                              alt="${restaurant.name}"
                              class="restaurant-image"
-                             onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                             onerror="this.onerror=null; this.src='/images/placeholder.svg'">
                         <div class="restaurant-info">
                             <h3 class="restaurant-name">${restaurant.name}</h3>
                             <div>
@@ -1468,10 +1468,10 @@ async function showAddRestaurantToGuideModal(guideId) {
         restaurants.forEach(restaurant => {
             html += `
                 <div class="restaurant-card" style="cursor: pointer;" onclick="addRestaurantToGuide(${guideId}, ${restaurant.id})">
-                    <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+                    <img src="${restaurant.imageUrl || '/images/placeholder.svg'}"
                          alt="${restaurant.name}"
                          class="restaurant-image"
-                         onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                         onerror="this.onerror=null; this.src='/images/placeholder.svg'">
                     <div class="restaurant-info">
                         <h3 class="restaurant-name">${restaurant.name}</h3>
                         <span class="restaurant-category">${restaurant.category}</span>
@@ -1613,10 +1613,10 @@ async function viewRoute(routeId) {
                 html += `
                     <div class="restaurant-card">
                         <div class="order-badge">Stop #${stop.order}</div>
-                        <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+                        <img src="${restaurant.imageUrl || '/images/placeholder.svg'}"
                              alt="${restaurant.name}"
                              class="restaurant-image"
-                             onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                             onerror="this.onerror=null; this.src='/images/placeholder.svg'">
                         <div class="restaurant-info">
                             <h3 class="restaurant-name">${restaurant.name}</h3>
                             <div>
@@ -1719,10 +1719,10 @@ async function showAddStopModal(routeId) {
         restaurants.forEach(restaurant => {
             html += `
                 <div class="restaurant-card" style="cursor: pointer;" onclick="addStopToRoute(${routeId}, ${restaurant.id})">
-                    <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+                    <img src="${restaurant.imageUrl || '/images/placeholder.svg'}"
                          alt="${restaurant.name}"
                          class="restaurant-image"
-                         onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                         onerror="this.onerror=null; this.src='/images/placeholder.svg'">
                     <div class="restaurant-info">
                         <h3 class="restaurant-name">${restaurant.name}</h3>
                         <span class="restaurant-category">${restaurant.category}</span>
@@ -1818,11 +1818,11 @@ async function viewList(listId) {
 
                 html += `
                     <div class="restaurant-card">
-                        <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+                        <img src="${restaurant.imageUrl || '/images/placeholder.svg'}"
                              alt="${restaurant.name}"
                              class="restaurant-image"
                              loading="lazy"
-                             onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                             onerror="this.onerror=null; this.src='/images/placeholder.svg'">
                         <div class="restaurant-info">
                             <h3 class="restaurant-name">${restaurant.name}</h3>
                             <div>
@@ -2028,11 +2028,11 @@ async function showSharedListPage(shareUrl) {
 
                 html += `
                     <div class="restaurant-card">
-                        <img src="${restaurant.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}"
+                        <img src="${restaurant.imageUrl || '/images/placeholder.svg'}"
                              alt="${restaurant.name}"
                              class="restaurant-image"
                              loading="lazy"
-                             onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                             onerror="this.onerror=null; this.src='/images/placeholder.svg'">
                         <div class="restaurant-info">
                             <h3 class="restaurant-name">${restaurant.name}</h3>
                             <div>
