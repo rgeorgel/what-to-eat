@@ -52,7 +52,9 @@ async function initializeApp() {
 
     // Load all restaurants initially - only if not on a share page
     if (!window.location.hash.startsWith('#/share/')) {
-        await loadRestaurants();
+        // Apply province filter if a city preference is saved
+        const searchParams = savedCity ? { province: savedCity } : {};
+        await loadRestaurants(searchParams);
         // Initialize map
         initializeMap();
     }
