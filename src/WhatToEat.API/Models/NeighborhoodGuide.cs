@@ -15,4 +15,5 @@ public class NeighborhoodGuide
     // Navigation properties
     public ApplicationUser User { get; set; } = null!;
     public ICollection<GuideRestaurant> GuideRestaurants { get; set; } = new List<GuideRestaurant>();
+    public ICollection<GuideTag> GuideTags { get; set; } = new List<GuideTag>();
 }

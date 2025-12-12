@@ -4,10 +4,11 @@ class GuidesService {
         this.baseUrl = '/api/neighborhoodguides';
     }
 
-    async getAllGuides(neighborhood = null, officialOnly = null) {
+    async getAllGuides(neighborhood = null, officialOnly = null, tags = null) {
         const params = new URLSearchParams();
         if (neighborhood) params.append('neighborhood', neighborhood);
         if (officialOnly !== null) params.append('officialOnly', officialOnly);
+        if (tags) params.append('tags', tags);
 
         const queryString = params.toString();
         const url = queryString ? `${this.baseUrl}?${queryString}` : this.baseUrl;
@@ -118,6 +119,45 @@ class GuidesService {
         });
 
         if (!response.ok) throw new Error('Failed to fetch neighborhoods');
+        return await response.json();
+    }
+
+    async addTag(guideId, tagName) {
+        const response = await fetch(`${this.baseUrl}/${guideId}/tags`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...authService.getAuthHeaders()
+            },
+            body: JSON.stringify({ name: tagName })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to add tag');
+        }
+        return await response.json();
+    }
+
+    async removeTag(guideId, tagId) {
+        const response = await fetch(`${this.baseUrl}/${guideId}/tags/${tagId}`, {
+            method: 'DELETE',
+            headers: {
+                ...authService.getAuthHeaders()
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to remove tag');
+    }
+
+    async getPopularTags(limit = 20) {
+        const response = await fetch(`${this.baseUrl}/tags/popular?limit=${limit}`, {
+            headers: {
+                ...authService.getAuthHeaders()
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch popular tags');
         return await response.json();
     }
 }

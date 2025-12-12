@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WhatToEat.API.Data;
 using WhatToEat.API.DTOs.FavoriteLists;
+using WhatToEat.API.DTOs.Tags;
 using WhatToEat.API.Models;
 
 namespace WhatToEat.API.Controllers;
@@ -33,6 +34,8 @@ public class FavoriteListsController : ControllerBase
             .Include(fl => fl.User)
             .Include(fl => fl.ListItems)
             .Include(fl => fl.Followers)
+            .Include(fl => fl.ListTags)
+                .ThenInclude(lt => lt.Tag)
             .Where(fl => fl.UserId == userId)
             .Select(fl => new FavoriteListDto
             {
@@ -46,6 +49,7 @@ public class FavoriteListsController : ControllerBase
                 ItemCount = fl.ListItems.Count,
                 FollowerCount = fl.Followers.Count,
                 IsFollowing = false,
+                Tags = fl.ListTags.Select(lt => new TagDto { Id = lt.Tag.Id, Name = lt.Tag.Name }).ToList(),
                 CreatedAt = fl.CreatedAt,
                 UpdatedAt = fl.UpdatedAt
             })
@@ -65,6 +69,8 @@ public class FavoriteListsController : ControllerBase
             .Include(fl => fl.User)
             .Include(fl => fl.ListItems)
             .Include(fl => fl.Followers)
+            .Include(fl => fl.ListTags)
+                .ThenInclude(lt => lt.Tag)
             .FirstOrDefaultAsync(fl => fl.Id == id);
 
         if (list == null) return NotFound();
@@ -96,6 +102,7 @@ public class FavoriteListsController : ControllerBase
             ItemCount = list.ListItems.Count,
             FollowerCount = list.Followers.Count,
             IsFollowing = isFollowing,
+            Tags = list.ListTags.Select(lt => new TagDto { Id = lt.Tag.Id, Name = lt.Tag.Name }).ToList(),
             CreatedAt = list.CreatedAt,
             UpdatedAt = list.UpdatedAt
         });
@@ -110,6 +117,8 @@ public class FavoriteListsController : ControllerBase
             .Include(fl => fl.User)
             .Include(fl => fl.ListItems)
             .Include(fl => fl.Followers)
+            .Include(fl => fl.ListTags)
+                .ThenInclude(lt => lt.Tag)
             .FirstOrDefaultAsync(fl => fl.ShareUrl == shareUrl && fl.IsPublic);
 
         if (list == null) return NotFound();
@@ -130,6 +139,7 @@ public class FavoriteListsController : ControllerBase
             ItemCount = list.ListItems.Count,
             FollowerCount = list.Followers.Count,
             IsFollowing = isFollowing,
+            Tags = list.ListTags.Select(lt => new TagDto { Id = lt.Tag.Id, Name = lt.Tag.Name }).ToList(),
             CreatedAt = list.CreatedAt,
             UpdatedAt = list.UpdatedAt
         });
@@ -169,6 +179,7 @@ public class FavoriteListsController : ControllerBase
             ItemCount = 0,
             FollowerCount = 0,
             IsFollowing = false,
+            Tags = new List<TagDto>(),
             CreatedAt = list.CreatedAt,
             UpdatedAt = list.UpdatedAt
         });
@@ -405,6 +416,9 @@ public class FavoriteListsController : ControllerBase
                 .ThenInclude(fl => fl.ListItems)
             .Include(lf => lf.FavoriteList)
                 .ThenInclude(fl => fl.Followers)
+            .Include(lf => lf.FavoriteList)
+                .ThenInclude(fl => fl.ListTags)
+                    .ThenInclude(lt => lt.Tag)
             .Where(lf => lf.UserId == userId)
             .Select(lf => new FavoriteListDto
             {
@@ -418,6 +432,7 @@ public class FavoriteListsController : ControllerBase
                 ItemCount = lf.FavoriteList.ListItems.Count,
                 FollowerCount = lf.FavoriteList.Followers.Count,
                 IsFollowing = true,
+                Tags = lf.FavoriteList.ListTags.Select(lt => new TagDto { Id = lt.Tag.Id, Name = lt.Tag.Name }).ToList(),
                 CreatedAt = lf.FavoriteList.CreatedAt,
                 UpdatedAt = lf.FavoriteList.UpdatedAt
             })
@@ -431,7 +446,8 @@ public class FavoriteListsController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<FavoriteListDto>>> GetPublicLists(
         [FromQuery] string? searchTerm = null,
-        [FromQuery] string? sortBy = null)
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? tags = null)
     {
         var userId = _userManager.GetUserId(User);
 
@@ -440,12 +456,21 @@ public class FavoriteListsController : ControllerBase
             .Include(fl => fl.User)
             .Include(fl => fl.ListItems)
             .Include(fl => fl.Followers)
+            .Include(fl => fl.ListTags)
+                .ThenInclude(lt => lt.Tag)
             .Where(fl => fl.IsPublic);
 
         // Apply filtering by list name
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             query = query.Where(fl => fl.Name.Contains(searchTerm));
+        }
+
+        // Apply filtering by tags (comma-separated list of tag names)
+        if (!string.IsNullOrWhiteSpace(tags))
+        {
+            var tagNames = tags.Split(',').Select(t => t.Trim().TrimStart('#').ToLower()).ToList();
+            query = query.Where(fl => fl.ListTags.Any(lt => tagNames.Contains(lt.Tag.Name)));
         }
 
         // Apply sorting
@@ -480,6 +505,7 @@ public class FavoriteListsController : ControllerBase
             ItemCount = fl.ListItems.Count,
             FollowerCount = fl.Followers.Count,
             IsFollowing = followingListIds.Contains(fl.Id),
+            Tags = fl.ListTags.Select(lt => new TagDto { Id = lt.Tag.Id, Name = lt.Tag.Name }).ToList(),
             CreatedAt = fl.CreatedAt,
             UpdatedAt = fl.UpdatedAt
         }).ToList();
@@ -498,6 +524,8 @@ public class FavoriteListsController : ControllerBase
             .Include(fl => fl.User)
             .Include(fl => fl.ListItems)
             .Include(fl => fl.Followers)
+            .Include(fl => fl.ListTags)
+                .ThenInclude(lt => lt.Tag)
             .Where(fl => fl.UserId == userId && fl.ListType == listType)
             .Select(fl => new FavoriteListDto
             {
@@ -511,6 +539,7 @@ public class FavoriteListsController : ControllerBase
                 ItemCount = fl.ListItems.Count,
                 FollowerCount = fl.Followers.Count,
                 IsFollowing = false,
+                Tags = fl.ListTags.Select(lt => new TagDto { Id = lt.Tag.Id, Name = lt.Tag.Name }).ToList(),
                 CreatedAt = fl.CreatedAt,
                 UpdatedAt = fl.UpdatedAt
             })
@@ -537,6 +566,95 @@ public class FavoriteListsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "List type updated successfully", listType = newType });
+    }
+
+    // POST: api/favoritelists/{id}/tags - Add tag to list
+    [HttpPost("{id}/tags")]
+    public async Task<ActionResult<TagDto>> AddTagToList(int id, AddTagDto addTagDto)
+    {
+        var userId = _userManager.GetUserId(User);
+        if (userId == null) return Unauthorized();
+
+        var list = await _context.FavoriteLists.FindAsync(id);
+        if (list == null) return NotFound(new { message = "List not found" });
+
+        if (list.UserId != userId) return Forbid();
+
+        // Normalize tag name (remove # if present, convert to lowercase)
+        var tagName = addTagDto.Name.TrimStart('#').ToLower();
+
+        // Find or create tag
+        var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Name == tagName);
+        if (tag == null)
+        {
+            tag = new Tag { Name = tagName };
+            _context.Tags.Add(tag);
+            await _context.SaveChangesAsync();
+        }
+
+        // Check if tag is already added to the list
+        var existingListTag = await _context.ListTags
+            .FirstOrDefaultAsync(lt => lt.FavoriteListId == id && lt.TagId == tag.Id);
+
+        if (existingListTag != null)
+        {
+            return BadRequest(new { message = "Tag already exists on this list" });
+        }
+
+        var listTag = new ListTag
+        {
+            FavoriteListId = id,
+            TagId = tag.Id
+        };
+
+        _context.ListTags.Add(listTag);
+        list.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new TagDto { Id = tag.Id, Name = tag.Name });
+    }
+
+    // DELETE: api/favoritelists/{id}/tags/{tagId} - Remove tag from list
+    [HttpDelete("{id}/tags/{tagId}")]
+    public async Task<IActionResult> RemoveTagFromList(int id, int tagId)
+    {
+        var userId = _userManager.GetUserId(User);
+        if (userId == null) return Unauthorized();
+
+        var list = await _context.FavoriteLists.FindAsync(id);
+        if (list == null) return NotFound(new { message = "List not found" });
+
+        if (list.UserId != userId) return Forbid();
+
+        var listTag = await _context.ListTags
+            .FirstOrDefaultAsync(lt => lt.FavoriteListId == id && lt.TagId == tagId);
+
+        if (listTag == null) return NotFound(new { message = "Tag not found on this list" });
+
+        _context.ListTags.Remove(listTag);
+        list.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    // GET: api/favoritelists/tags/popular - Get popular tags
+    [HttpGet("tags/popular")]
+    [AllowAnonymous]
+    public async Task<ActionResult<IEnumerable<object>>> GetPopularTags([FromQuery] int limit = 20)
+    {
+        var popularTags = await _context.ListTags
+            .GroupBy(lt => lt.Tag)
+            .Select(g => new
+            {
+                Tag = new TagDto { Id = g.Key.Id, Name = g.Key.Name },
+                Count = g.Count()
+            })
+            .OrderByDescending(x => x.Count)
+            .Take(limit)
+            .ToListAsync();
+
+        return Ok(popularTags);
     }
 
     private string GenerateShareUrl()

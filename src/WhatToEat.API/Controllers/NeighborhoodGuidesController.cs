@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WhatToEat.API.Data;
 using WhatToEat.API.DTOs.NeighborhoodGuides;
+using WhatToEat.API.DTOs.Tags;
 using WhatToEat.API.Models;
 
 namespace WhatToEat.API.Controllers;
@@ -28,11 +29,14 @@ public class NeighborhoodGuidesController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<NeighborhoodGuideDto>>> GetGuides(
         [FromQuery] string? neighborhood = null,
-        [FromQuery] bool? officialOnly = null)
+        [FromQuery] bool? officialOnly = null,
+        [FromQuery] string? tags = null)
     {
         var query = _context.NeighborhoodGuides
             .Include(ng => ng.User)
             .Include(ng => ng.GuideRestaurants)
+            .Include(ng => ng.GuideTags)
+                .ThenInclude(gt => gt.Tag)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(neighborhood))
@@ -43,6 +47,13 @@ public class NeighborhoodGuidesController : ControllerBase
         if (officialOnly.HasValue && officialOnly.Value)
         {
             query = query.Where(ng => ng.IsOfficial);
+        }
+
+        // Apply filtering by tags (comma-separated list of tag names)
+        if (!string.IsNullOrWhiteSpace(tags))
+        {
+            var tagNames = tags.Split(',').Select(t => t.Trim().TrimStart('#').ToLower()).ToList();
+            query = query.Where(ng => ng.GuideTags.Any(gt => tagNames.Contains(gt.Tag.Name)));
         }
 
         var guides = await query
@@ -59,6 +70,7 @@ public class NeighborhoodGuidesController : ControllerBase
                 IsOfficial = ng.IsOfficial,
                 ImageUrl = ng.ImageUrl,
                 RestaurantCount = ng.GuideRestaurants.Count,
+                Tags = ng.GuideTags.Select(gt => new TagDto { Id = gt.Tag.Id, Name = gt.Tag.Name }).ToList(),
                 CreatedAt = ng.CreatedAt,
                 UpdatedAt = ng.UpdatedAt
             })
@@ -77,6 +89,8 @@ public class NeighborhoodGuidesController : ControllerBase
         var guide = await _context.NeighborhoodGuides
             .Include(ng => ng.User)
             .Include(ng => ng.GuideRestaurants)
+            .Include(ng => ng.GuideTags)
+                .ThenInclude(gt => gt.Tag)
             .FirstOrDefaultAsync(ng => ng.Id == id);
 
         if (guide == null) return NotFound();
@@ -92,6 +106,7 @@ public class NeighborhoodGuidesController : ControllerBase
             IsOfficial = guide.IsOfficial,
             ImageUrl = guide.ImageUrl,
             RestaurantCount = guide.GuideRestaurants.Count,
+            Tags = guide.GuideTags.Select(gt => new TagDto { Id = gt.Tag.Id, Name = gt.Tag.Name }).ToList(),
             CreatedAt = guide.CreatedAt,
             UpdatedAt = guide.UpdatedAt
         });
@@ -160,6 +175,7 @@ public class NeighborhoodGuidesController : ControllerBase
             IsOfficial = guide.IsOfficial,
             ImageUrl = guide.ImageUrl,
             RestaurantCount = 0,
+            Tags = new List<TagDto>(),
             CreatedAt = guide.CreatedAt,
             UpdatedAt = guide.UpdatedAt
         });
@@ -302,5 +318,102 @@ public class NeighborhoodGuidesController : ControllerBase
             .ToListAsync();
 
         return Ok(neighborhoods);
+    }
+
+    /// <summary>
+    /// Add a tag to a guide
+    /// </summary>
+    [HttpPost("{id}/tags")]
+    [Authorize]
+    public async Task<ActionResult<TagDto>> AddTagToGuide(int id, AddTagDto addTagDto)
+    {
+        var userId = _userManager.GetUserId(User);
+        if (userId == null) return Unauthorized();
+
+        var guide = await _context.NeighborhoodGuides.FindAsync(id);
+        if (guide == null) return NotFound(new { message = "Guide not found" });
+
+        if (guide.UserId != userId) return Forbid();
+
+        // Normalize tag name (remove # if present, convert to lowercase)
+        var tagName = addTagDto.Name.TrimStart('#').ToLower();
+
+        // Find or create tag
+        var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Name == tagName);
+        if (tag == null)
+        {
+            tag = new Tag { Name = tagName };
+            _context.Tags.Add(tag);
+            await _context.SaveChangesAsync();
+        }
+
+        // Check if tag is already added to the guide
+        var existingGuideTag = await _context.GuideTags
+            .FirstOrDefaultAsync(gt => gt.NeighborhoodGuideId == id && gt.TagId == tag.Id);
+
+        if (existingGuideTag != null)
+        {
+            return BadRequest(new { message = "Tag already exists on this guide" });
+        }
+
+        var guideTag = new GuideTag
+        {
+            NeighborhoodGuideId = id,
+            TagId = tag.Id
+        };
+
+        _context.GuideTags.Add(guideTag);
+        guide.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new TagDto { Id = tag.Id, Name = tag.Name });
+    }
+
+    /// <summary>
+    /// Remove a tag from a guide
+    /// </summary>
+    [HttpDelete("{id}/tags/{tagId}")]
+    [Authorize]
+    public async Task<IActionResult> RemoveTagFromGuide(int id, int tagId)
+    {
+        var userId = _userManager.GetUserId(User);
+        if (userId == null) return Unauthorized();
+
+        var guide = await _context.NeighborhoodGuides.FindAsync(id);
+        if (guide == null) return NotFound(new { message = "Guide not found" });
+
+        if (guide.UserId != userId) return Forbid();
+
+        var guideTag = await _context.GuideTags
+            .FirstOrDefaultAsync(gt => gt.NeighborhoodGuideId == id && gt.TagId == tagId);
+
+        if (guideTag == null) return NotFound(new { message = "Tag not found on this guide" });
+
+        _context.GuideTags.Remove(guideTag);
+        guide.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Get popular tags for guides
+    /// </summary>
+    [HttpGet("tags/popular")]
+    [AllowAnonymous]
+    public async Task<ActionResult<IEnumerable<object>>> GetPopularTags([FromQuery] int limit = 20)
+    {
+        var popularTags = await _context.GuideTags
+            .GroupBy(gt => gt.Tag)
+            .Select(g => new
+            {
+                Tag = new TagDto { Id = g.Key.Id, Name = g.Key.Name },
+                Count = g.Count()
+            })
+            .OrderByDescending(x => x.Count)
+            .Take(limit)
+            .ToListAsync();
+
+        return Ok(popularTags);
     }
 }

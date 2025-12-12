@@ -15,4 +15,5 @@ public class FavoriteList
     public ApplicationUser User { get; set; } = null!;
     public ICollection<ListItem> ListItems { get; set; } = new List<ListItem>();
     public ICollection<ListFollower> Followers { get; set; } = new List<ListFollower>();
+    public ICollection<ListTag> ListTags { get; set; } = new List<ListTag>();
 }

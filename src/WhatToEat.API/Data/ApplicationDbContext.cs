@@ -19,6 +19,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<GuideRestaurant> GuideRestaurants { get; set; } = null!;
     public DbSet<RouteItinerary> RouteItineraries { get; set; } = null!;
     public DbSet<RouteStop> RouteStops { get; set; } = null!;
+    public DbSet<Tag> Tags { get; set; } = null!;
+    public DbSet<ListTag> ListTags { get; set; } = null!;
+    public DbSet<GuideTag> GuideTags { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -178,6 +181,51 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.Restaurant)
                 .WithMany()
                 .HasForeignKey(e => e.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure Tag entity
+        modelBuilder.Entity<Tag>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
+
+            entity.HasIndex(e => e.Name).IsUnique();
+        });
+
+        // Configure ListTag entity
+        modelBuilder.Entity<ListTag>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasIndex(e => new { e.FavoriteListId, e.TagId }).IsUnique();
+
+            entity.HasOne(e => e.FavoriteList)
+                .WithMany(fl => fl.ListTags)
+                .HasForeignKey(e => e.FavoriteListId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Tag)
+                .WithMany(t => t.ListTags)
+                .HasForeignKey(e => e.TagId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure GuideTag entity
+        modelBuilder.Entity<GuideTag>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasIndex(e => new { e.NeighborhoodGuideId, e.TagId }).IsUnique();
+
+            entity.HasOne(e => e.NeighborhoodGuide)
+                .WithMany(ng => ng.GuideTags)
+                .HasForeignKey(e => e.NeighborhoodGuideId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Tag)
+                .WithMany(t => t.GuideTags)
+                .HasForeignKey(e => e.TagId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

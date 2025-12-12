@@ -155,10 +155,11 @@ class FavoritesService {
         return await response.json();
     }
 
-    async getPublicLists(searchTerm = null, sortBy = null) {
+    async getPublicLists(searchTerm = null, sortBy = null, tags = null) {
         const params = new URLSearchParams();
         if (searchTerm) params.append('searchTerm', searchTerm);
         if (sortBy) params.append('sortBy', sortBy);
+        if (tags) params.append('tags', tags);
 
         const queryString = params.toString();
         const url = queryString ? `${this.baseUrl}/public?${queryString}` : `${this.baseUrl}/public`;
@@ -193,6 +194,45 @@ class FavoritesService {
         });
 
         if (!response.ok) throw new Error('Failed to change list type');
+        return await response.json();
+    }
+
+    async addTag(listId, tagName) {
+        const response = await fetch(`${this.baseUrl}/${listId}/tags`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...authService.getAuthHeaders()
+            },
+            body: JSON.stringify({ name: tagName })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to add tag');
+        }
+        return await response.json();
+    }
+
+    async removeTag(listId, tagId) {
+        const response = await fetch(`${this.baseUrl}/${listId}/tags/${tagId}`, {
+            method: 'DELETE',
+            headers: {
+                ...authService.getAuthHeaders()
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to remove tag');
+    }
+
+    async getPopularTags(limit = 20) {
+        const response = await fetch(`${this.baseUrl}/tags/popular?limit=${limit}`, {
+            headers: {
+                ...authService.getAuthHeaders()
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch popular tags');
         return await response.json();
     }
 }
