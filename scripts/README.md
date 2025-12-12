@@ -1,8 +1,31 @@
-# Category Consolidation Scripts (PostgreSQL)
+# Category & CuisineType Consolidation Scripts (PostgreSQL)
 
-This directory contains PostgreSQL scripts to consolidate your restaurant categories from 250+ categories down to approximately 35 main categories.
+This directory contains PostgreSQL scripts to consolidate your restaurant data from 250+ values down to approximately 35 main groups.
+
+## 📁 Available Consolidation Scripts
+
+### Category Consolidation
+Scripts for consolidating the `Category` field:
+- `verify-categories.sql` - View current category distribution
+- `backup-categories.sql` - Backup categories before consolidation
+- `consolidate-categories.sql` - Apply category consolidation
+- `rollback-categories.sql` - Restore original categories
+
+### CuisineType Consolidation
+Scripts for consolidating the `CuisineType` field:
+- `verify-cuisine-types.sql` - View current cuisine type distribution
+- `backup-cuisine-types.sql` - Backup cuisine types before consolidation
+- `consolidate-cuisine-types.sql` - Apply cuisine type consolidation
+- `rollback-cuisine-types.sql` - Restore original cuisine types
+
+## 📚 Documentation
+
+- **[README.md](README.md)** - This file (Category consolidation guide)
+- **[README-CUISINE-TYPES.md](README-CUISINE-TYPES.md)** - CuisineType consolidation guide
 
 ## 📋 Scripts Overview
+
+### Category Scripts
 
 | Script | Purpose |
 |--------|---------|
@@ -11,7 +34,40 @@ This directory contains PostgreSQL scripts to consolidate your restaurant catego
 | `consolidate-categories.sql` | Apply the category consolidation mappings |
 | `rollback-categories.sql` | Restore original categories from backup if needed |
 
+### CuisineType Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `verify-cuisine-types.sql` | View current cuisine type distribution and statistics |
+| `backup-cuisine-types.sql` | Create a backup of current cuisine types before consolidation |
+| `consolidate-cuisine-types.sql` | Apply the cuisine type consolidation mappings |
+| `rollback-cuisine-types.sql` | Restore original cuisine types from backup if needed |
+
 ## 🚀 Quick Start Guide
+
+### Running Both Consolidations Together
+
+If you want to consolidate both Category and CuisineType fields (recommended):
+
+```bash
+# 1. Verify current state of both
+psql -h localhost -U your-username -d WhatToEat -f scripts/verify-categories.sql
+psql -h localhost -U your-username -d WhatToEat -f scripts/verify-cuisine-types.sql
+
+# 2. Backup both (IMPORTANT!)
+psql -h localhost -U your-username -d WhatToEat -f scripts/backup-categories.sql
+psql -h localhost -U your-username -d WhatToEat -f scripts/backup-cuisine-types.sql
+
+# 3. Consolidate both
+psql -h localhost -U your-username -d WhatToEat -f scripts/consolidate-categories.sql
+psql -h localhost -U your-username -d WhatToEat -f scripts/consolidate-cuisine-types.sql
+
+# 4. Verify both
+psql -h localhost -U your-username -d WhatToEat -f scripts/verify-categories.sql
+psql -h localhost -U your-username -d WhatToEat -f scripts/verify-cuisine-types.sql
+```
+
+### Running Category Consolidation Only
 
 ### Step 1: Check Current State
 Run this to see your current category distribution:
