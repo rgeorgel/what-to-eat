@@ -1171,3 +1171,119 @@ textarea.form-control {
         flex-direction: column;
     }
 }
+
+/* ============= HASHTAG STYLES ============= */
+
+.tags-container {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: var(--light-color);
+    border-radius: 8px;
+}
+
+.tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tag:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tag-remove {
+    background: rgba(255, 255, 255, 0.3);
+    border: none;
+    color: white;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.tag-remove:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.tag-input-section {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.tag-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: border-color 0.3s;
+}
+
+.tag-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.tag-input::placeholder {
+    color: #999;
+}
+
+/* Tag filter input */
+.tag-filter {
+    width: 100%;
+    padding: 0.6rem;
+    margin-bottom: 1rem;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.95rem;
+}
+
+.tag-filter:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+}
+
+@media (max-width: 768px) {
+    .tags-list {
+        gap: 0.4rem;
+    }
+
+    .tag {
+        font-size: 0.85rem;
+        padding: 0.3rem 0.6rem;
+    }
+
+    .tag-input-section {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .tag-input {
+        width: 100%;
+    }
+}
+}

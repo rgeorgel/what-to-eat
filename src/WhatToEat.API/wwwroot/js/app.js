@@ -1329,6 +1329,7 @@ async function viewGuide(guideId) {
                     <p class="guide-neighborhood">📍 ${guide.neighborhoodName}</p>
                     <p class="guide-description">${guide.description}</p>
                     <p class="guide-meta">Created by ${guide.userDisplayName}</p>
+                    ${renderTags(guide.tags, isOwner, guide.id, 'Guide')}
                     ${isOwner ? `
                         <button class="btn btn-secondary" onclick="showAddRestaurantToGuideModal(${guide.id})">Add Restaurant</button>
                         <button class="btn btn-danger" onclick="deleteGuide(${guide.id})">Delete Guide</button>
@@ -1780,17 +1781,20 @@ async function viewList(listId) {
 
         const backPage = currentPage === 'following' ? 'following' : currentPage === 'discover' ? 'discover' : 'myLists';
 
+        const user = authService.getUser();
+        const isOwner = user && list.userId === user.userId;
+
         let html = `
             <div class="list-detail-page">
                 <div class="list-header">
                     <button class="btn btn-small" onclick="navigateTo('${backPage}')">← Back</button>
                     <h2>${list.name}</h2>
                     <p>By ${list.userDisplayName} • ${list.itemCount} restaurants • ${list.followerCount} followers</p>
+                    ${renderTags(list.tags, isOwner, list.id, 'List')}
         `;
 
         // Show follow/unfollow button if viewing from discover page and authenticated
         if (currentPage === 'discover' && authService.isAuthenticated()) {
-            const user = authService.getUser();
             if (user.userId !== list.userId) {
                 if (list.isFollowing) {
                     html += `<button class="btn btn-primary" onclick="unfollowListFromDiscover(${list.id})">Unfollow</button>`;
@@ -1839,8 +1843,7 @@ async function viewList(listId) {
                                 </button>
                 `;
 
-                const user = authService.getUser();
-                if (user && list.userId === user.userId) {
+                if (isOwner) {
                     html += `<button class="btn btn-small btn-danger" onclick="removeFromList(${listId}, ${item.id})">Remove</button>`;
                 }
 
@@ -2088,5 +2091,105 @@ async function unfollowSharedList(listId) {
         handleHashChange();
     } catch (error) {
         alert('Failed to unfollow list: ' + error.message);
+    }
+}
+
+// ============= HASHTAG FUNCTIONS =============
+
+function renderTags(tags, isOwner, entityId, entityType) {
+    if (!tags || tags.length === 0) {
+        return isOwner ? `
+            <div class="tags-container">
+                <div class="tag-input-section">
+                    <input type="text" id="${entityType}TagInput${entityId}"
+                           placeholder="Add tags (e.g., italian, cozy)"
+                           class="tag-input">
+                    <button class="btn btn-small" onclick="addTag${entityType}(${entityId})">Add Tag</button>
+                </div>
+            </div>
+        ` : '';
+    }
+
+    let html = '<div class="tags-container"><div class="tags-list">';
+    tags.forEach(tag => {
+        html += `
+            <span class="tag">
+                #${tag.name}
+                ${isOwner ? `<button class="tag-remove" onclick="removeTag${entityType}(${entityId}, ${tag.id})" title="Remove tag">&times;</button>` : ''}
+            </span>
+        `;
+    });
+    html += '</div>';
+
+    if (isOwner) {
+        html += `
+            <div class="tag-input-section">
+                <input type="text" id="${entityType}TagInput${entityId}"
+                       placeholder="Add tags (e.g., italian, cozy)"
+                       class="tag-input">
+                <button class="btn btn-small" onclick="addTag${entityType}(${entityId})">Add Tag</button>
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    return html;
+}
+
+async function addTagList(listId) {
+    const input = document.getElementById(`ListTagInput${listId}`);
+    const tagName = input.value.trim();
+
+    if (!tagName) {
+        alert('Please enter a tag name');
+        return;
+    }
+
+    try {
+        await favoritesService.addTag(listId, tagName);
+        input.value = '';
+        await viewList(listId);
+    } catch (error) {
+        alert('Failed to add tag: ' + error.message);
+    }
+}
+
+async function removeTagList(listId, tagId) {
+    if (!confirm('Remove this tag?')) return;
+
+    try {
+        await favoritesService.removeTag(listId, tagId);
+        await viewList(listId);
+    } catch (error) {
+        alert('Failed to remove tag: ' + error.message);
+    }
+}
+
+async function addTagGuide(guideId) {
+    const input = document.getElementById(`GuideTagInput${guideId}`);
+    const tagName = input.value.trim();
+
+    if (!tagName) {
+        alert('Please enter a tag name');
+        return;
+    }
+
+    try {
+        await guidesService.addTag(guideId, tagName);
+        input.value = '';
+        await viewGuide(guideId);
+    } catch (error) {
+        alert('Failed to add tag: ' + error.message);
+    }
+}
+
+async function removeTagGuide(guideId, tagId) {
+    if (!confirm('Remove this tag?')) return;
+
+    try {
+        await guidesService.removeTag(guideId, tagId);
+        await viewGuide(guideId);
+    } catch (error) {
+        alert('Failed to remove tag: ' + error.message);
     }
 }
