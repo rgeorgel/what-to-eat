@@ -1,67 +1,80 @@
 -- ============================================================================
--- Category Verification Script
+-- Category Verification Script (PostgreSQL)
 -- ============================================================================
 -- Use this to check the current state of categories in your database
 -- Run this BEFORE and AFTER the consolidation to compare results
 -- ============================================================================
 
-PRINT '========================================';
-PRINT 'CATEGORY DISTRIBUTION REPORT';
-PRINT '========================================';
-PRINT '';
+DO $$
+BEGIN
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'CATEGORY DISTRIBUTION REPORT';
+    RAISE NOTICE '========================================';
+    RAISE NOTICE '';
+END $$;
 
 -- Total number of unique categories
-PRINT 'Total Unique Categories:';
-SELECT COUNT(DISTINCT Category) as TotalCategories FROM Restaurants;
-PRINT '';
+SELECT 'Total Unique Categories:' as "Report Section";
+SELECT COUNT(DISTINCT "Category") as "TotalCategories" FROM "Restaurants";
+
+SELECT '' as ""; -- Empty line
 
 -- Total number of restaurants
-PRINT 'Total Restaurants:';
-SELECT COUNT(*) as TotalRestaurants FROM Restaurants;
-PRINT '';
+SELECT 'Total Restaurants:' as "Report Section";
+SELECT COUNT(*) as "TotalRestaurants" FROM "Restaurants";
+
+SELECT '' as ""; -- Empty line
 
 -- Category distribution (sorted by count)
-PRINT 'Category Distribution (by count):';
+SELECT 'Category Distribution (by count):' as "Report Section";
 SELECT
-    Category,
-    COUNT(*) as RestaurantCount,
-    CAST(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM Restaurants) AS DECIMAL(5,2)) as Percentage
-FROM Restaurants
-GROUP BY Category
-ORDER BY RestaurantCount DESC;
-PRINT '';
+    "Category",
+    COUNT(*) as "RestaurantCount",
+    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM "Restaurants"), 2) as "Percentage"
+FROM "Restaurants"
+GROUP BY "Category"
+ORDER BY "RestaurantCount" DESC;
+
+SELECT '' as ""; -- Empty line
 
 -- Category distribution (alphabetical)
-PRINT 'Category Distribution (alphabetical):';
+SELECT 'Category Distribution (alphabetical):' as "Report Section";
 SELECT
-    Category,
-    COUNT(*) as RestaurantCount
-FROM Restaurants
-GROUP BY Category
-ORDER BY Category;
-PRINT '';
+    "Category",
+    COUNT(*) as "RestaurantCount"
+FROM "Restaurants"
+GROUP BY "Category"
+ORDER BY "Category";
+
+SELECT '' as ""; -- Empty line
 
 -- Categories with only one restaurant (orphaned)
-PRINT 'Categories with only 1 restaurant:';
+SELECT 'Categories with only 1 restaurant:' as "Report Section";
 SELECT
-    Category,
-    COUNT(*) as RestaurantCount
-FROM Restaurants
-GROUP BY Category
+    "Category",
+    COUNT(*) as "RestaurantCount"
+FROM "Restaurants"
+GROUP BY "Category"
 HAVING COUNT(*) = 1
-ORDER BY Category;
-PRINT '';
+ORDER BY "Category";
+
+SELECT '' as ""; -- Empty line
 
 -- Top 10 categories by restaurant count
-PRINT 'Top 10 Categories:';
-SELECT TOP 10
-    Category,
-    COUNT(*) as RestaurantCount
-FROM Restaurants
-GROUP BY Category
-ORDER BY RestaurantCount DESC;
-PRINT '';
+SELECT 'Top 10 Categories:' as "Report Section";
+SELECT
+    "Category",
+    COUNT(*) as "RestaurantCount"
+FROM "Restaurants"
+GROUP BY "Category"
+ORDER BY "RestaurantCount" DESC
+LIMIT 10;
 
-PRINT '========================================';
-PRINT 'END OF REPORT';
-PRINT '========================================';
+SELECT '' as ""; -- Empty line
+
+DO $$
+BEGIN
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'END OF REPORT';
+    RAISE NOTICE '========================================';
+END $$;

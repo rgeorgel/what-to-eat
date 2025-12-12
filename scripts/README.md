@@ -1,6 +1,6 @@
-# Category Consolidation Scripts
+# Category Consolidation Scripts (PostgreSQL)
 
-This directory contains SQL scripts to consolidate your restaurant categories from 250+ categories down to approximately 35 main categories.
+This directory contains PostgreSQL scripts to consolidate your restaurant categories from 250+ categories down to approximately 35 main categories.
 
 ## 📋 Scripts Overview
 
@@ -129,28 +129,29 @@ The consolidation reduces categories into these main groups:
 
 ## 🔧 Database Connection
 
-To run these scripts, connect to your database using:
+To run these scripts, connect to your PostgreSQL database using:
 
-### Option 1: SQL Server Management Studio (SSMS)
-1. Open SSMS
-2. Connect to your database server
-3. Open the script file
-4. Select the database from the dropdown
-5. Click Execute
-
-### Option 2: Azure Data Studio
-1. Open Azure Data Studio
-2. Connect to your database
-3. Open the script file
-4. Run the script
-
-### Option 3: Command Line (sqlcmd)
+### Option 1: psql Command Line
 ```bash
-sqlcmd -S your-server -d WhatToEat -i verify-categories.sql
-sqlcmd -S your-server -d WhatToEat -i backup-categories.sql
-sqlcmd -S your-server -d WhatToEat -i consolidate-categories.sql
-sqlcmd -S your-server -d WhatToEat -i verify-categories.sql
+psql -h localhost -U your-username -d WhatToEat -f scripts/verify-categories.sql
+psql -h localhost -U your-username -d WhatToEat -f scripts/backup-categories.sql
+psql -h localhost -U your-username -d WhatToEat -f scripts/consolidate-categories.sql
+psql -h localhost -U your-username -d WhatToEat -f scripts/verify-categories.sql
 ```
+
+### Option 2: pgAdmin
+1. Open pgAdmin
+2. Connect to your PostgreSQL server
+3. Navigate to your database
+4. Open the Query Tool (Tools → Query Tool)
+5. Open the script file (File → Open)
+6. Click Execute/Run (F5)
+
+### Option 3: DBeaver / DataGrip
+1. Open your database IDE
+2. Connect to your PostgreSQL database
+3. Open the SQL script file
+4. Execute the script
 
 ## 🔍 Customizing the Consolidation
 
@@ -164,24 +165,25 @@ If you want to adjust the category groupings:
 Example:
 ```sql
 -- Change this:
-UPDATE Restaurants SET Category = 'Pizza & Italian'
-WHERE Category IN ('Pizza', 'Italian');
+UPDATE "Restaurants" SET "Category" = 'Pizza & Italian'
+WHERE "Category" IN ('Pizza', 'Italian');
 
 -- To keep them separate:
-UPDATE Restaurants SET Category = 'Pizza'
-WHERE Category IN ('Pizza');
+UPDATE "Restaurants" SET "Category" = 'Pizza'
+WHERE "Category" IN ('Pizza');
 
-UPDATE Restaurants SET Category = 'Italian'
-WHERE Category IN ('Italian');
+UPDATE "Restaurants" SET "Category" = 'Italian'
+WHERE "Category" IN ('Italian');
 ```
 
 ## 📞 Need Help?
 
 If you encounter issues:
-1. Check that you're connected to the correct database
-2. Verify you have UPDATE permissions on the Restaurants table
-3. Review the error message carefully
-4. If needed, run the rollback script to restore original categories
+1. Check that you're connected to the correct PostgreSQL database
+2. Verify you have UPDATE permissions on the "Restaurants" table
+3. Ensure your user has necessary privileges: `GRANT UPDATE ON "Restaurants" TO your_username;`
+4. Review the error message carefully
+5. If needed, run the rollback script to restore original categories
 
 ## 📝 Next Steps
 

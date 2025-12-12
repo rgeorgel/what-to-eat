@@ -1,35 +1,46 @@
 -- ============================================================================
--- Category Rollback Script
+-- Category Rollback Script (PostgreSQL)
 -- ============================================================================
 -- Run this to restore original categories from backup
 -- IMPORTANT: Only run this if you have run backup-categories.sql first
 -- ============================================================================
 
--- Check if backup table exists
-IF OBJECT_ID('RestaurantsCategoryBackup', 'U') IS NULL
+-- Check if backup table exists and perform rollback
+DO $$
 BEGIN
-    PRINT 'ERROR: Backup table does not exist! Run backup-categories.sql first.';
-    RETURN;
-END
+    -- Check if backup table exists
+    IF NOT EXISTS (
+        SELECT FROM pg_tables
+        WHERE schemaname = 'public'
+        AND tablename = 'RestaurantsCategoryBackup'
+    ) THEN
+        RAISE EXCEPTION 'ERROR: Backup table does not exist! Run backup-categories.sql first.';
+    END IF;
+
+    RAISE NOTICE 'Backup table found. Starting rollback...';
+END $$;
 
 -- Show current state before rollback
-PRINT 'Categories BEFORE rollback:';
-SELECT Category, COUNT(*) as Count
-FROM Restaurants
-GROUP BY Category
-ORDER BY Category;
+SELECT 'Categories BEFORE rollback:' as "Status";
+SELECT "Category", COUNT(*) as "Count"
+FROM "Restaurants"
+GROUP BY "Category"
+ORDER BY "Category";
 
 -- Restore original categories from backup
-UPDATE r
-SET r.Category = b.OriginalCategory
-FROM Restaurants r
-INNER JOIN RestaurantsCategoryBackup b ON r.Id = b.Id;
+UPDATE "Restaurants" r
+SET "Category" = b."OriginalCategory"
+FROM "RestaurantsCategoryBackup" b
+WHERE r."Id" = b."Id";
 
 -- Verify rollback
-PRINT 'Categories AFTER rollback:';
-SELECT Category, COUNT(*) as Count
-FROM Restaurants
-GROUP BY Category
-ORDER BY Category;
+SELECT 'Categories AFTER rollback:' as "Status";
+SELECT "Category", COUNT(*) as "Count"
+FROM "Restaurants"
+GROUP BY "Category"
+ORDER BY "Category";
 
-PRINT 'Rollback completed successfully!';
+DO $$
+BEGIN
+    RAISE NOTICE 'Rollback completed successfully!';
+END $$;
