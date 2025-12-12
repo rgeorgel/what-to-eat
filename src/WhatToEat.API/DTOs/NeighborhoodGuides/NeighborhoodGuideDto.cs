@@ -1,3 +1,5 @@
+using WhatToEat.API.DTOs.Tags;
+
 namespace WhatToEat.API.DTOs.NeighborhoodGuides;
 
 public class NeighborhoodGuideDto
@@ -11,6 +13,7 @@ public class NeighborhoodGuideDto
     public bool IsOfficial { get; set; }
     public string? ImageUrl { get; set; }
     public int RestaurantCount { get; set; }
+    public List<TagDto> Tags { get; set; } = new List<TagDto>();
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
