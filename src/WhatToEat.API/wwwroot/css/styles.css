@@ -1314,4 +1314,25 @@ textarea.form-control {
         width: 100%;
     }
 }
+
+/* =============================================================================
+   Hide Cuisine Filter
+   ============================================================================= */
+
+/* Hide cuisine filter in main search section */
+.filters label[for="cuisineFilter"],
+#cuisineFilter {
+    display: none !important;
+}
+
+/* Hide cuisine filter in Decide For Me modal */
+.form-group label[for="randomCuisineFilter"],
+#randomCuisineFilter {
+    display: none !important;
+}
+
+/* Hide cuisine filter in Add Restaurant to Guide modal */
+.filter-group:has(#guideCuisineFilter),
+#guideCuisineFilter {
+    display: none !important;
 }
