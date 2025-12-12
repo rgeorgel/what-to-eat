@@ -1070,8 +1070,9 @@ footer {
 /* Create forms */
 .create-guide-modal,
 .create-route-modal,
-.add-stop-modal {
-    max-width: 600px;
+.add-stop-modal,
+.add-restaurant-modal {
+    max-width: 800px;
     margin: 2rem auto;
     background: white;
     padding: 2rem;
@@ -1079,10 +1080,37 @@ footer {
     box-shadow: var(--shadow);
 }
 
+.add-restaurant-modal {
+    max-width: 1000px;
+}
+
 .create-guide-modal h2,
 .create-route-modal h2,
-.add-stop-modal h2 {
+.add-stop-modal h2,
+.add-restaurant-modal h2 {
     margin-bottom: 1.5rem;
+}
+
+.add-restaurant-modal p {
+    margin-bottom: 1rem;
+    color: var(--gray-color);
+}
+
+/* Modal Filters */
+.modal-filters {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--light-color);
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.modal-filters .filter-group {
+    flex: 1;
+    min-width: 180px;
 }
 
 .form-group {
