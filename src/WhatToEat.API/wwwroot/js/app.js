@@ -1457,15 +1457,113 @@ async function showAddRestaurantToGuideModal(guideId) {
     resultsSection.innerHTML = '<div class="page-loading">Loading restaurants...</div>';
 
     try {
-        const restaurants = await fetch('/api/restaurants').then(r => r.json());
+        // Load filter options first
+        const [categoriesResponse, cuisinesResponse, provincesResponse] = await Promise.all([
+            fetch(`${API_BASE_URL}/restaurants/categories`),
+            fetch(`${API_BASE_URL}/restaurants/cuisine-types`),
+            fetch(`${API_BASE_URL}/restaurants/provinces`)
+        ]);
 
+        const categories = await categoriesResponse.json();
+        const cuisines = await cuisinesResponse.json();
+        const provinces = await provincesResponse.json();
+
+        // Build the modal with filters
         let html = `
             <div class="add-restaurant-modal">
                 <h2>Add Restaurant to Guide</h2>
                 <p>Select a restaurant to add to your guide:</p>
-                <div class="restaurant-list">
+
+                <!-- Filter Section -->
+                <div class="modal-filters">
+                    <div class="filter-group">
+                        <input type="text" id="guideRestaurantSearch" placeholder="Search by name..." class="filter-input">
+                    </div>
+                    <div class="filter-group">
+                        <select id="guideProvinceFilter" class="filter-select">
+                            <option value="">All Cities</option>
+                            ${provinces.map(p => `<option value="${p}">${p === 'ON' ? 'Toronto' : p === 'BC' ? 'Vancouver' : p}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <select id="guideCategoryFilter" class="filter-select">
+                            <option value="">All Categories</option>
+                            ${categories.map(c => `<option value="${c}">${c}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <select id="guideCuisineFilter" class="filter-select">
+                            <option value="">All Cuisines</option>
+                            ${cuisines.map(c => `<option value="${c}">${c}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button class="btn btn-small" onclick="clearGuideFilters(${guideId})">Clear Filters</button>
+                    </div>
+                </div>
+
+                <div id="guideRestaurantList" class="restaurant-list">
+                    <!-- Restaurant cards will be inserted here -->
+                </div>
+                <button class="btn btn-secondary" onclick="viewGuide(${guideId})">Cancel</button>
+            </div>
         `;
 
+        resultsSection.innerHTML = html;
+
+        // Set up event listeners for filters
+        document.getElementById('guideRestaurantSearch').addEventListener('input', () => loadRestaurantsForGuide(guideId));
+        document.getElementById('guideProvinceFilter').addEventListener('change', () => loadRestaurantsForGuide(guideId));
+        document.getElementById('guideCategoryFilter').addEventListener('change', () => loadRestaurantsForGuide(guideId));
+        document.getElementById('guideCuisineFilter').addEventListener('change', () => loadRestaurantsForGuide(guideId));
+
+        // Load restaurants with current filter values
+        await loadRestaurantsForGuide(guideId);
+    } catch (error) {
+        showError('Failed to load restaurants');
+        console.error('Error loading restaurants:', error);
+    }
+}
+
+async function loadRestaurantsForGuide(guideId) {
+    const restaurantListContainer = document.getElementById('guideRestaurantList');
+    if (!restaurantListContainer) return;
+
+    restaurantListContainer.innerHTML = '<div class="page-loading">Loading restaurants...</div>';
+
+    try {
+        // Get filter values
+        const searchQuery = document.getElementById('guideRestaurantSearch')?.value || '';
+        const province = document.getElementById('guideProvinceFilter')?.value || '';
+        const category = document.getElementById('guideCategoryFilter')?.value || '';
+        const cuisine = document.getElementById('guideCuisineFilter')?.value || '';
+
+        // Build search params
+        const params = new URLSearchParams();
+        if (searchQuery) params.append('query', searchQuery);
+        if (province) params.append('province', province);
+        if (category) params.append('category', category);
+        if (cuisine) params.append('cuisineType', cuisine);
+
+        // Fetch restaurants
+        const url = params.toString()
+            ? `${API_BASE_URL}/restaurants/search?${params.toString()}`
+            : `${API_BASE_URL}/restaurants`;
+
+        const restaurants = await fetch(url).then(r => r.json());
+
+        if (restaurants.length === 0) {
+            restaurantListContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🍽️</div>
+                    <div class="empty-state-text">No restaurants found</div>
+                    <p class="empty-state-subtext">Try adjusting your filters</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
         restaurants.forEach(restaurant => {
             html += `
                 <div class="restaurant-card" style="cursor: pointer;" onclick="addRestaurantToGuide(${guideId}, ${restaurant.id})">
@@ -1482,16 +1580,24 @@ async function showAddRestaurantToGuideModal(guideId) {
             `;
         });
 
-        html += `
-                </div>
-                <button class="btn btn-secondary" onclick="viewGuide(${guideId})">Cancel</button>
+        restaurantListContainer.innerHTML = html;
+    } catch (error) {
+        restaurantListContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">❌</div>
+                <div class="empty-state-text">Failed to load restaurants</div>
             </div>
         `;
-        resultsSection.innerHTML = html;
-    } catch (error) {
-        showError('Failed to load restaurants');
-        console.error('Error loading restaurants:', error);
+        console.error('Error loading restaurants for guide:', error);
     }
+}
+
+function clearGuideFilters(guideId) {
+    document.getElementById('guideRestaurantSearch').value = '';
+    document.getElementById('guideProvinceFilter').value = '';
+    document.getElementById('guideCategoryFilter').value = '';
+    document.getElementById('guideCuisineFilter').value = '';
+    loadRestaurantsForGuide(guideId);
 }
 
 async function addRestaurantToGuide(guideId, restaurantId) {
