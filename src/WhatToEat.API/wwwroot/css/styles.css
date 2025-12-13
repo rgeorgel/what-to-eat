@@ -432,6 +432,7 @@ footer {
     /* Show hamburger menu on mobile */
     .hamburger-menu {
         display: flex;
+        order: 2;
     }
 
     /* Header adjustments */
@@ -449,10 +450,13 @@ footer {
 
     .header-content {
         position: relative;
+        flex-wrap: nowrap;
+        justify-content: space-between;
     }
 
     .brand {
         flex: 1;
+        order: 1;
     }
 
     /* Mobile navigation - hidden by default */
@@ -472,6 +476,7 @@ footer {
         overflow-y: auto;
         box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
         z-index: 1000;
+        order: 3;
     }
 
     .main-nav.active {
