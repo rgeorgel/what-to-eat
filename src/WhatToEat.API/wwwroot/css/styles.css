@@ -451,6 +451,10 @@ footer {
         position: relative;
     }
 
+    #hamburgerBtn {
+        display: flex;
+    }
+
     .brand {
         flex: 1;
     }
