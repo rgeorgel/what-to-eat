@@ -9,6 +9,12 @@ let allRestaurants = [];
 let currentPage = 'home';
 let selectedRestaurantForFavorite = null;
 
+// Must match the hamburger-menu breakpoint in css/styles.css
+const MOBILE_NAV_BREAKPOINT = 1024;
+let toastTimer = null;
+// True when markers were fitted while the map was hidden (zero size)
+let mapNeedsFit = false;
+
 // City preference functions
 function saveCityPreference(province) {
     if (province) {
@@ -54,9 +60,9 @@ async function initializeApp() {
     if (!window.location.hash.startsWith('#/share/')) {
         // Apply province filter if a city preference is saved
         const searchParams = savedCity ? { province: savedCity } : {};
-        await loadRestaurants(searchParams);
-        // Initialize map
+        // Create the map first so loadRestaurants can place markers on it
         initializeMap();
+        await loadRestaurants(searchParams);
     }
 }
 
@@ -74,7 +80,7 @@ function setupEventListeners() {
     const navLinks = document.querySelectorAll('.nav-link');
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= MOBILE_NAV_BREAKPOINT) {
                 hamburgerBtn.classList.remove('active');
                 mainNav.classList.remove('active');
             }
@@ -83,13 +89,16 @@ function setupEventListeners() {
 
     // Close mobile menu when clicking outside
     document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth <= MOBILE_NAV_BREAKPOINT) {
             if (!mainNav.contains(e.target) && !hamburgerBtn.contains(e.target)) {
                 hamburgerBtn.classList.remove('active');
                 mainNav.classList.remove('active');
             }
         }
     });
+
+    // Dismiss the floating message toast on click
+    document.getElementById('errorMessage').addEventListener('click', hideError);
 
     // Search button
     document.getElementById('searchBtn').addEventListener('click', handleSearch);
@@ -471,6 +480,13 @@ function createRestaurantCard(restaurant) {
 }
 
 function initializeMap() {
+    // Dispose of a previous map whose container was replaced
+    if (map) {
+        map.remove();
+        map = null;
+    }
+    markers = [];
+
     // Initialize Leaflet map
     map = L.map('map').setView([40.7128, -74.0060], 12);
 
@@ -513,6 +529,7 @@ function updateMap(restaurants, userLocationOverride = null) {
     // Add restaurant markers
     restaurants.forEach(restaurant => {
         const marker = L.marker([restaurant.latitude, restaurant.longitude]).addTo(map);
+        marker.restaurantId = restaurant.id;
 
         // Escape single quotes in restaurant name for onclick handler
         const escapedName = restaurant.name.replace(/'/g, "\\'");
@@ -533,11 +550,21 @@ function updateMap(restaurants, userLocationOverride = null) {
         markers.push(marker);
     });
 
-    // Fit map bounds to show all markers
-    if (markers.length > 0) {
-        const group = L.featureGroup(markers);
-        map.fitBounds(group.getBounds().pad(0.1));
+    fitMapToMarkers();
+}
+
+function fitMapToMarkers() {
+    if (!map || markers.length === 0) return;
+
+    // A hidden map has no size, so bounds can't be fitted until it's shown
+    if (map.getContainer().offsetWidth === 0) {
+        mapNeedsFit = true;
+        return;
     }
+
+    mapNeedsFit = false;
+    const group = L.featureGroup(markers);
+    map.fitBounds(group.getBounds().pad(0.1));
 }
 
 function toggleView(view) {
@@ -559,7 +586,9 @@ function toggleView(view) {
 
         // Invalidate map size to fix rendering issues
         setTimeout(() => {
-            if (map) map.invalidateSize();
+            if (!map) return;
+            map.invalidateSize();
+            if (mapNeedsFit) fitMapToMarkers();
         }, 100);
     }
 }
@@ -588,6 +617,10 @@ function showError(message) {
     const errorElement = document.getElementById('errorMessage');
     errorElement.textContent = message;
     errorElement.classList.remove('hidden');
+
+    // Auto-dismiss the toast after a few seconds
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideError, 6000);
 }
 
 function hideError() {
@@ -597,6 +630,7 @@ function hideError() {
 
 function showSuccess(message) {
     const errorElement = document.getElementById('errorMessage');
+    clearTimeout(toastTimer);
     errorElement.textContent = message;
     errorElement.classList.remove('hidden');
     errorElement.style.backgroundColor = 'var(--success-color)';
@@ -827,8 +861,9 @@ function handleViewRandomOnMap() {
 
     hideModal('decideForMeModal');
 
-    // Switch to map view
+    // Switch to map view (centering on the pick below, not on all markers)
     toggleView('map');
+    mapNeedsFit = false;
 
     // Center map on the restaurant
     if (map) {
@@ -1054,8 +1089,8 @@ async function navigateTo(page, param) {
                 <div id="map"></div>
             </div>
         `;
-        await loadRestaurants();
         initializeMap();
+        await loadRestaurants();
     } else if (page === 'myLists') {
         document.getElementById('myListsLink').classList.add('active');
         searchSection.style.display = 'none';

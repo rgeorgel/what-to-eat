@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>What to Eat - Restaurant Finder</title>
+    <meta name="theme-color" content="#FF5A36">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
@@ -11,10 +15,13 @@
     <header>
         <div class="container">
             <div class="header-content">
-                <div class="brand">
-                    <h1>🍽️ What to Eat</h1>
-                    <p class="tagline">Find your next favorite meal</p>
-                </div>
+                <a href="#" class="brand" onclick="event.preventDefault(); document.getElementById('homeLink').click();">
+                    <span class="brand-logo" aria-hidden="true">🍽️</span>
+                    <div class="brand-text">
+                        <h1>What to Eat</h1>
+                        <span class="tagline">Find your next favorite meal</span>
+                    </div>
+                </a>
                 <button id="hamburgerBtn" class="hamburger-menu" aria-label="Toggle menu">
                     <span></span>
                     <span></span>
@@ -43,43 +50,65 @@
     <main class="container">
         <!-- Search Section -->
         <section class="search-section">
+            <div class="hero-deco" aria-hidden="true">
+                <span>🍕</span><span>🍣</span><span>🌮</span><span>🍜</span><span>🥐</span><span>🍔</span>
+            </div>
+            <div class="hero">
+                <span class="hero-eyebrow"><span class="pulse-dot"></span> Toronto · Vancouver</span>
+                <h2 class="hero-title">Hungry? Let's find your <span class="text-gradient">next favorite bite.</span></h2>
+                <p class="hero-subtitle">Search spots, explore the map, or let fate pick dinner for you.</p>
+            </div>
+
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="What do you want to eat? (e.g., pizza, sushi, burgers...)">
-                <button id="searchBtn" class="btn btn-primary">Search</button>
-                <button id="nearMeBtn" class="btn btn-secondary">
-                    <span class="icon">📍</span> Near Me
-                </button>
-                <button id="decideMeBtn" class="btn btn-special">
-                    <span class="icon">🎲</span> Decide For Me!
-                </button>
+                <div class="search-field">
+                    <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                    <input type="text" id="searchInput" placeholder="Pizza, sushi, burgers..." aria-label="Search restaurants">
+                    <button id="searchBtn" class="btn btn-primary">Search</button>
+                </div>
+                <div class="quick-actions">
+                    <button id="nearMeBtn" class="btn btn-secondary">
+                        <span class="icon">📍</span> Near Me
+                    </button>
+                    <button id="decideMeBtn" class="btn btn-special">
+                        <span class="icon dice">🎲</span> Decide For Me!
+                    </button>
+                </div>
             </div>
 
             <div class="filters">
-                <label for="cityFilter">City:</label>
-                <select id="cityFilter">
-                    <option value="">All Cities</option>
-                    <option value="ON">Toronto</option>
-                    <option value="BC">Vancouver</option>
-                </select>
+                <div class="filter-field">
+                    <label for="cityFilter">City</label>
+                    <select id="cityFilter">
+                        <option value="">All Cities</option>
+                        <option value="ON">Toronto</option>
+                        <option value="BC">Vancouver</option>
+                    </select>
+                </div>
 
-                <label for="categoryFilter">Category:</label>
-                <select id="categoryFilter">
-                    <option value="">All Categories</option>
-                </select>
+                <div class="filter-field">
+                    <label for="categoryFilter">Category</label>
+                    <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
 
-                <label for="cuisineFilter">Cuisine:</label>
-                <select id="cuisineFilter">
-                    <option value="">All Cuisines</option>
-                </select>
+                <div class="filter-field">
+                    <label for="cuisineFilter">Cuisine</label>
+                    <select id="cuisineFilter">
+                        <option value="">All Cuisines</option>
+                    </select>
+                </div>
 
-                <label for="radiusFilter">Radius (km):</label>
-                <select id="radiusFilter">
-                    <option value="1">1 km</option>
-                    <option value="2">2 km</option>
-                    <option value="5" selected>5 km</option>
-                    <option value="10">10 km</option>
-                    <option value="20">20 km</option>
-                </select>
+                <div class="filter-field">
+                    <label for="radiusFilter">Radius</label>
+                    <select id="radiusFilter">
+                        <option value="1">1 km</option>
+                        <option value="2">2 km</option>
+                        <option value="5" selected>5 km</option>
+                        <option value="10">10 km</option>
+                        <option value="20">20 km</option>
+                    </select>
+                </div>
             </div>
         </section>
 
@@ -122,14 +151,15 @@
 
     <footer>
         <div class="container">
-            <p>&copy; 2024 What to Eat. Find your perfect meal!</p>
+            <p class="footer-brand">🍽️ What to Eat</p>
+            <p class="footer-note">Made with 🧡 for hungry people &middot; Find your perfect meal!</p>
         </div>
     </footer>
 
     <!-- Login Modal -->
     <div id="loginModal" class="modal hidden">
         <div class="modal-content">
-            <span class="close" data-modal="loginModal">&times;</span>
+            <span class="close" role="button" aria-label="Close" data-modal="loginModal">&times;</span>
             <h2>Login</h2>
             <form id="loginForm">
                 <div class="form-group">
@@ -150,7 +180,7 @@
     <!-- Signup Modal -->
     <div id="signupModal" class="modal hidden">
         <div class="modal-content">
-            <span class="close" data-modal="signupModal">&times;</span>
+            <span class="close" role="button" aria-label="Close" data-modal="signupModal">&times;</span>
             <h2>Sign Up</h2>
             <form id="signupForm">
                 <div class="form-group">
@@ -179,7 +209,7 @@
     <!-- Add to Favorites Modal -->
     <div id="addToFavoritesModal" class="modal hidden">
         <div class="modal-content">
-            <span class="close" data-modal="addToFavoritesModal">&times;</span>
+            <span class="close" role="button" aria-label="Close" data-modal="addToFavoritesModal">&times;</span>
             <h2>Add to Favorites</h2>
             <div id="favoriteListSelection">
                 <div class="form-group">
@@ -214,10 +244,11 @@
     <!-- Decide For Me Modal -->
     <div id="decideForMeModal" class="modal hidden">
         <div class="modal-content">
-            <span class="close" data-modal="decideForMeModal">&times;</span>
-            <h2>🎲 Decide For Me!</h2>
+            <span class="close" role="button" aria-label="Close" data-modal="decideForMeModal">&times;</span>
+            <div class="modal-emoji dice" aria-hidden="true">🎲</div>
+            <h2>Decide For Me!</h2>
             <div id="decideForMeOptions">
-                <p>Let me pick a restaurant for you!</p>
+                <p class="modal-lead">Can't choose? Let me pick a restaurant for you!</p>
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="useLocationFilter" checked>
